@@ -25,8 +25,11 @@ generate_report(
 )
 ```
 
+Without `--prompt`, a structured report for `--anatomy-region` is requested.
 Inference is local and uses FP32 MLX on the Apple Silicon GPU. Add `--enable-thinking` to
-use the source template's thinking mode. Each request owns its decoder state.
+use the source template's thinking mode; the reasoning is saved as `thinking` in
+`model_response.json` and `report.txt` holds only the answer. Each request owns
+its decoder state.
 
 Input must be a finite scalar 3D HU NIfTI CT with a coded spatial transform.
 Conflicting qform/sform transforms are rejected. Physical units are normalized
@@ -67,7 +70,10 @@ make build
 
 [Historical FP32 qualification](fp32-engineering-qualification.json) covers four
 synthetic cases. [Standalone verification](standalone-verification.json) records
-package, CPU preprocessing and weight checks. A fresh standalone GPU inference
-run is pending. These checks establish no clinical or report accuracy.
+package, CPU preprocessing and weight checks. [Real-CT parity](real-ct-cuda-parity.json)
+records native generation on four de-identified real CT volumes (five requests,
+1,320 generated tokens) matching the pinned FP32 PyTorch CUDA model token for
+token, with image embeddings and first-step logits within the FP32 tolerances.
+These checks establish no clinical or report accuracy.
 
 See [third-party terms](../THIRD_PARTY_NOTICES.md).

@@ -14,7 +14,7 @@ MLX port by **Joseph Sandoval**.
 ## Requirements
 
 Apple Silicon Mac, macOS, Python 3.12 and [uv](https://docs.astral.sh/uv/).
-Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.4 GB;
+Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
 
 ## Quick start
@@ -41,7 +41,7 @@ For abdomen CT:
 ```bash
 uv run nv-reason-ct-mlx report \
   --input ct.nii.gz --model-dir models --output-dir outputs \
-  --anatomy-region abdomen --prompt "write a structured abdomen CT report"
+  --anatomy-region abdomen
 ```
 
 To ask a question about the CT, set `--prompt` to your question.
@@ -51,17 +51,22 @@ To ask a question about the CT, set `--prompt` to your question.
 Input is one 3D CT volume in NIfTI format (`.nii` or `.nii.gz`) with Hounsfield
 Unit values and valid spatial geometry. DICOM and 2D images are unsupported.
 
+The upstream crop locates the chest from enclosed air. On whole-body scans,
+especially with arms raised, it can select the head and neck instead; crop such
+volumes to the chest or abdomen before running.
+
 Each run writes:
 
 - `report.txt` — generated response
-- `model_response.json` — response and generation metadata
+- `model_response.json` — response, reasoning (with `--enable-thinking`) and generation metadata
 - `run.json` — execution metadata
 
 ## Technical details
 
 This release uses FP32 inference with weights converted directly from the
 original BF16 checkpoint, without retraining. Implementation and verification
-details, including the pending standalone GPU check, are in [docs](docs/usage.md).
+details, including token-exact parity with the CUDA source model on real CT, are in
+[docs](docs/usage.md).
 
 ## Intended use
 

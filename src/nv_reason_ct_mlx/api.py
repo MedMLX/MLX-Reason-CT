@@ -69,14 +69,19 @@ def generate_report(
     output_dir: str | Path,
     *,
     model_dir: str | Path,
-    prompt: str = "write a structured chest CT report",
+    prompt: str | None = None,
     anatomy_region: str = "chest",
     enable_thinking: bool = False,
     max_new_tokens: int = 512,
 ) -> dict[str, object]:
-    """Run one HU NIfTI CT locally on Metal; retain partial output on truncation."""
+    """Run one HU NIfTI CT locally on Metal; retain partial output on truncation.
+
+    Without a prompt, a structured report for ``anatomy_region`` is requested.
+    """
     if anatomy_region not in {"chest", "abdomen"}:
         raise InvalidInputError("anatomy_region must be chest or abdomen")
+    if prompt is None:
+        prompt = f"write a structured {anatomy_region} CT report"
     if (
         isinstance(max_new_tokens, bool)
         or not isinstance(max_new_tokens, int)

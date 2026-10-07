@@ -58,8 +58,10 @@
     "reviewed_warning": "Local greedy token ID assignment is an integer, not a credential."
   },
   "learned_standalone_inference": {
-    "status": "not_executed",
-    "blocker": "Shared Metal device is occupied by a pre-existing original BF16 qualification run; its exclusive lock was honored."
+    "status": "passed",
+    "date": "2026-10-07",
+    "summary": "Native MLX FP32 generation on four de-identified real CT volumes (five requests, 1,320 generated tokens) matched the pinned upstream PyTorch FP32 CUDA model token for token under two SDPA policies.",
+    "evidence": "real-ct-cuda-parity.json"
   },
   "historical_fp32_evidence": "fp32-engineering-qualification.json",
   "clinical_validation": false,

@@ -28,7 +28,9 @@ def main() -> int:
     report.add_argument("--model-dir", type=Path, required=True)
     report.add_argument("--output-dir", type=Path, required=True)
     report.add_argument("--anatomy-region", choices=["chest", "abdomen"], default="chest")
-    report.add_argument("--prompt", default="write a structured chest CT report")
+    report.add_argument(
+        "--prompt", help="Question or instruction (default: structured report for the region)"
+    )
     report.add_argument("--enable-thinking", action="store_true")
     report.add_argument("--max-new-tokens", type=int, default=512)
     args = parser.parse_args()

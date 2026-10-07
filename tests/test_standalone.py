@@ -86,3 +86,45 @@ def test_response_completion_and_partial_persistence(
         "requires_human_review": True,
         "generation": metrics,
     }
+
+
+def test_thinking_response_separates_reasoning_from_report(tmp_path: Path) -> None:
+    metrics = {"terminated_by_eos": True, "generated_tokens": 9}
+    save_response(tmp_path, "Plan the report.\n</think>\n\nFINDINGS: Normal.", metrics)
+    assert (tmp_path / "report.txt").read_text() == "FINDINGS: Normal.\n"
+    assert json.loads((tmp_path / "model_response.json").read_text()) == {
+        "report": "FINDINGS: Normal.",
+        "thinking": "Plan the report.",
+        "requires_human_review": True,
+        "generation": metrics,
+    }
+    with pytest.raises(ModelExecutionError, match="empty or incomplete"):
+        save_response(tmp_path, "Reasoning only\n</think>\n\n", metrics)
+
+
+@pytest.mark.parametrize("region", ["chest", "abdomen"])
+def test_default_prompt_requests_report_for_region(
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, region: str
+) -> None:
+    api = import_module("nv_reason_ct_mlx.api")
+    seen: dict[str, str] = {}
+
+    class StopAfterPrompt(Exception):
+        pass
+
+    class FakeProcessor:
+        def __init__(self, model_dir: Path) -> None:
+            pass
+
+        def image(self, source: Path, anatomy_region: str) -> tuple[None, None]:
+            return None, None
+
+        def prompt(self, question: str, enable_thinking: bool) -> None:
+            seen["prompt"] = question
+            raise StopAfterPrompt
+
+    monkeypatch.setattr(api, "read_manifest", lambda model_dir: {})
+    monkeypatch.setattr(api, "Processor", FakeProcessor)
+    with pytest.raises(StopAfterPrompt):
+        api.generate_report("ct.nii.gz", tmp_path, model_dir=tmp_path, anatomy_region=region)
+    assert seen["prompt"] == f"write a structured {region} CT report"
