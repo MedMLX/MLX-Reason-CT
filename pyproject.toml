@@ -5,7 +5,7 @@ build-backend = "hatchling.build"
 [project]
 name = "nv-reason-ct-mlx"
 version = "0.1.0"
-description = "Standalone FP32 NVIDIA NV-Reason-CT inference on Apple Silicon Metal"
+description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"

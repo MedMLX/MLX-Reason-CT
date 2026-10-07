@@ -1,4 +1,15 @@
-# Usage details
+# Usage
+
+## CT question answering
+
+Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
+`chest` (the default) or `abdomen` to match the CT.
+
+```bash
+uv run nv-reason-ct-mlx report \
+  --input ct.nii.gz --model-dir models --output-dir outputs \
+  --prompt "What imaging modality is shown? Answer briefly."
+```
 
 ## Python API
 
@@ -14,7 +25,7 @@ generate_report(
 )
 ```
 
-Inference is local and uses FP32 Metal arithmetic. Add `--enable-thinking` to
+Inference is local and uses FP32 MLX on the Apple Silicon GPU. Add `--enable-thinking` to
 use the source template's thinking mode. Each request owns its decoder state.
 
 Input must be a finite scalar 3D HU NIfTI CT with a coded spatial transform.
@@ -40,7 +51,14 @@ without retraining, rejects changed source assets and validates tied weights.
 The disconnected 2D tower, unused mask token and duplicate LM head are excluded.
 The portable bundle verifies runtime metadata and all 35 shard hashes.
 
-## Development and evidence
+## Implementation
+
+The runtime implements the 3D vision encoder, multimodal projection and Qwen3.5
+hybrid decoder in MLX, including recurrent state and the attention KV cache.
+CT loading and preprocessing run on CPU. Inference requires macOS on Apple
+Silicon; preprocessing, conversion and bundle verification are portable.
+
+## Development and verification
 
 ```bash
 make qa
@@ -49,7 +67,7 @@ make build
 
 [Historical FP32 qualification](fp32-engineering-qualification.json) covers four
 synthetic cases. [Standalone verification](standalone-verification.json) records
-package, CPU preprocessing and weight checks. Fresh standalone learned inference
-is pending. These checks establish no clinical or report accuracy.
+package, CPU preprocessing and weight checks. A fresh standalone GPU inference
+run is pending. These checks establish no clinical or report accuracy.
 
 See [third-party terms](../THIRD_PARTY_NOTICES.md).

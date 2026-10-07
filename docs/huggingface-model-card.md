@@ -1,3 +1,18 @@
+---
+license: openmdw-1.1
+language:
+- en
+pipeline_tag: image-text-to-text
+base_model: nvidia/NV-Reason-CT
+tags:
+- native-mlx
+- apple-silicon
+- fp32
+- ct
+- medical-imaging
+- nv-reason-ct
+---
+
 # NV-Reason-CT MLX
 
 Native MLX port of [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT)
@@ -9,7 +24,11 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - FP32 inference using MLX; no PyTorch or CUDA required
 
 MLX port by **Joseph Sandoval**.
-[Weights](https://huggingface.co/josand/NV-Reason-CT-MLX) · [Usage](docs/usage.md)
+[GitHub](https://github.com/sandovaljoseph/NV-Reason-CT-MLX) ·
+[Usage](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/docs/usage.md)
+
+**Requires the companion `nv-reason-ct-mlx` runtime.** Generic `mlx-vlm` and
+`mlx-lm` examples do not support this 3D CT model.
 
 ## Requirements
 
@@ -60,8 +79,10 @@ Each run writes:
 ## Technical details
 
 This release uses FP32 inference with weights converted directly from the
-original BF16 checkpoint, without retraining. Implementation and verification
-details, including the pending standalone GPU check, are in [docs](docs/usage.md).
+original BF16 checkpoint, without retraining.
+[Implementation and verification details](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/docs/usage.md),
+including the pending standalone GPU check, are in the companion repository.
+[Upstream model card and limitations](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/upstream_model_card.md).
 
 ## Intended use
 
@@ -70,6 +91,10 @@ Outputs require human review.
 
 ## License
 
-Code: [Apache-2.0](LICENSE), Joseph Sandoval.
-Weights: [OpenMDW-1.1](THIRD_PARTY_NOTICES.md#nvidia-openmdw-11), NVIDIA CORPORATION & AFFILIATES.
-[Third-party notices](THIRD_PARTY_NOTICES.md).
+Weights: [OpenMDW-1.1](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/LICENSE),
+Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES.
+Underlying Qwen3.5 terms: [Apache-2.0](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/APACHE-2.0.txt).
+
+Port code: [Apache-2.0](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/LICENSE),
+Copyright (c) 2026 Joseph Sandoval.
+[Third-party notices](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/THIRD_PARTY_NOTICES.md).
