@@ -1,0 +1,55 @@
+[build-system]
+requires = ["hatchling==1.29.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "nv-reason-ct-mlx"
+version = "0.1.0"
+description = "Standalone FP32 NVIDIA NV-Reason-CT inference on Apple Silicon Metal"
+readme = "README.md"
+requires-python = ">=3.12,<3.13"
+license = "Apache-2.0"
+license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
+authors = [{name = "Joseph Sandoval"}]
+dependencies = [
+  "numpy==2.3.5",
+  "scipy==1.18.1",
+  "nibabel==5.4.2",
+  "tokenizers==0.22.2",
+  "jinja2==3.1.6",
+  "safetensors==0.8.0",
+  "huggingface-hub==1.23.0",
+  "mlx==0.32.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
+]
+
+[project.scripts]
+nv-reason-ct-mlx = "nv_reason_ct_mlx.cli:main"
+
+[project.urls]
+Repository = "https://github.com/sandovaljoseph/NV-Reason-CT-MLX"
+Weights = "https://huggingface.co/josand/NV-Reason-CT-MLX"
+
+[dependency-groups]
+dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright[nodejs]==1.1.411"]
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/nv_reason_ct_mlx"]
+
+[tool.ruff]
+target-version = "py312"
+line-length = 100
+extend-exclude = ["src/nv_reason_ct_mlx/gated_delta.py"]
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP"]
+
+[tool.pyright]
+include = ["src", "tests"]
+exclude = ["src/nv_reason_ct_mlx/gated_delta.py"]
+pythonVersion = "3.12"
+typeCheckingMode = "basic"
+venvPath = "."
+venv = ".venv"
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

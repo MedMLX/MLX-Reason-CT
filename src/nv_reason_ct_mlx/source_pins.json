@@ -1,0 +1,15 @@
+{
+  "LICENSE": "d7c8a9e5d1896d0a9588319cc7b1433e64645ad6d9e55632c30b78d8c038c23b",
+  "chat_template.jinja": "a4aee8afcf2e0711942cf848899be66016f8d14a889ff9ede07bca099c28f715",
+  "config.json": "c03e6071e42cc9f243c3f9bf66c5af9f749ee66c1ff9aa11fa6b5ed33045fe2d",
+  "generation_config.json": "6a391fdcafb170d69b8c5f7f2b131f8210c2fd7f6fa241862f664166bdc32d92",
+  "image_processor_3d/preprocessor_config.json": "1f5b118fa7b05e49a37e9fcb49ffbd26b5762fa357cc0c2ca4b3e1cb061830b2",
+  "model.py": "8079d6a89a1a65cacc88426e1884e161b2fdc6df61c304d06f6b04c0c9be79f3",
+  "model.safetensors": "655c15e59dfa1957f7d5f475b1702d689fb7107160f21256028391bb5f6e6ba5",
+  "preprocessor_config.json": "848b0776a3f963090450e4cf5687a77d7b2fcde569fadc0f493ed467ce88b916",
+  "processor.py": "762d95fd9dede47033f184a850c2af4000019ae2e8d0f7dea353513923662b09",
+  "processor_config.json": "44da6c32a6c23057fc7de8ea5a679801df6df3adb8bc4a0eb75e413e7107cce1",
+  "tokenizer.json": "06b9509352d2af50381ab2247e083b80d32d5c0aba91c272ca9ff729b6a0e523",
+  "tokenizer_config.json": "43ad4763287aaba4486a9f0fc787ab8eacbf2bfc812084520a19a28c242b1349",
+  "video_preprocessor_config.json": "aed9633de904e2aa55257f0e0eff5f1fdf8d854c3f4e12fc223c3e8289086c40"
+}
