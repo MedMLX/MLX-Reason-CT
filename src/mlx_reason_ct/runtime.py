@@ -1,7 +1,6 @@
 """Require Apple Silicon Metal explicitly before learned computation."""
 
 import platform
-from importlib import import_module
 from importlib.metadata import version
 from typing import Any
 
@@ -10,12 +9,22 @@ from mlx_reason_ct.errors import MissingDependencyError
 
 def import_mlx() -> Any:
     if platform.system() != "Darwin" or platform.machine() != "arm64":
-        raise MissingDependencyError("Inference requires macOS on Apple Silicon")
-    mx: Any = import_module("mlx.core")
-    if not mx.metal.is_available():
-        raise MissingDependencyError("Inference requires the Metal GPU")
-    mx.set_default_device(mx.gpu)
-    return mx
+        raise MissingDependencyError(
+            "NV-Reason-CT inference requires macOS on Apple Silicon with Metal",
+            hint="Run on an Apple Silicon Mac with GPU access; install mlx-reason-ct.",
+        )
+    from medmlx_core.runtime import (  # pyright: ignore[reportMissingTypeStubs]
+        import_mlx as shared_import_mlx,
+    )
+
+    try:
+        return shared_import_mlx()
+    except (ImportError, OSError) as error:
+        raise MissingDependencyError(
+            "NV-Reason-CT cannot load the MLX Metal runtime; "
+            "check that MLX is installed and the Metal GPU is accessible.",
+            hint="Install mlx-reason-ct on an Apple Silicon Mac with Metal GPU access.",
+        ) from error
 
 
 def host_info() -> dict[str, str]:

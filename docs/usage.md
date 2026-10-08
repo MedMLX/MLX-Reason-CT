@@ -17,7 +17,8 @@ uv run mlx-reason-ct report \
 from mlx_reason_ct import generate_report
 
 generate_report(
-    "ct.nii.gz", "outputs",
+    "ct.nii.gz",
+    "outputs",
     model_dir="models",
     anatomy_region="chest",
     prompt="write a structured chest CT report",
@@ -52,14 +53,15 @@ Conversion requires the complete pinned upstream snapshot at revision
 `386b93e034983f6c1fc841a43833a1b6a0cd9c13`. It expands BF16 bit patterns to FP32
 without retraining, rejects changed source assets and validates tied weights.
 The disconnected 2D tower, unused mask token and duplicate LM head are excluded.
-The portable bundle verifies runtime metadata and all 35 shard hashes.
+The converted bundle verifies runtime metadata and all 35 shard hashes.
 
 ## Implementation
 
 The runtime implements the 3D vision encoder, multimodal projection and Qwen3.5
 hybrid decoder in MLX, including recurrent state and the attention KV cache.
-CT loading and preprocessing run on CPU. Inference requires macOS on Apple
-Silicon; preprocessing, conversion and bundle verification are portable.
+CT loading and preprocessing run on the host. The supported platform is macOS
+arm64 on Apple Silicon with MLX on Metal. Learned execution has no host fallback
+and fails explicitly when Metal is unavailable.
 
 ## Development and verification
 
@@ -68,14 +70,14 @@ make qa
 make build
 ```
 
-[Historical FP32 qualification](fp32-engineering-qualification.json) covers four
-synthetic cases. [Standalone verification](standalone-verification.json) records
-package, CPU preprocessing and weight checks. [Real-CT parity](real-ct-cuda-parity.json)
-records native generation on four de-identified real CT volumes (five requests,
-1,320 generated tokens) matching the pinned FP32 PyTorch CUDA model token for
-token, with image embeddings and first-step logits within the FP32 tolerances.
-These checks establish no clinical or report accuracy.
+[Verification scope](verification.md) describes the darwin-arm64 references,
+rounding bounds, host-stage checks and Metal tests. These checks establish no
+full-model parity, clinical validation or report accuracy.
 
 See [third-party terms](../THIRD_PARTY_NOTICES.md).
 
-Python callers can select `precision="bfloat16"` for source BF16 arithmetic or `precision="bfloat16_fp32"` for BF16 weights with FP32 arithmetic. The CLI default remains FP32. The native `NativeModel` profiles retain the arithmetic identities used by the qualification fixtures; this does not establish clinical validation.
+Python callers can select `precision="bfloat16"` for source BF16 arithmetic or
+`precision="bfloat16_fp32"` for BF16 weights with FP32 arithmetic. The CLI accepts
+`--precision` with the same names; its default remains FP32. These profiles all
+execute on Metal. Existing output files require `overwrite=True` in Python or
+`--overwrite` on the CLI.

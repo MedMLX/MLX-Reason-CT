@@ -1,4 +1,4 @@
-"""Exact conversion and portable admission without the source checkpoint."""
+"""Exact conversion and bundle admission without the source checkpoint."""
 
 import hashlib
 import json
@@ -71,7 +71,7 @@ def source_checkpoint(
     return directory
 
 
-def test_conversion_preserves_bits_and_portable_bundle(
+def test_conversion_preserves_bits_and_bundle(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
     source = source_checkpoint(tmp_path / "source", monkeypatch)
@@ -102,7 +102,7 @@ def test_conversion_rejects_invalid_source_weights(
 
 
 @pytest.mark.parametrize("corruption", ["runtime", "shard", "dtype", "inventory", "revision"])
-def test_portable_bundle_rejects_corruption(
+def test_bundle_rejects_corruption(
     tmp_path: Path,
     monkeypatch: pytest.MonkeyPatch,
     corruption: str,

@@ -17,7 +17,6 @@ from typing import Any
 
 import numpy as np
 
-from mlx_reason_ct import gated_delta, source_arithmetic
 from mlx_reason_ct.chunk_delta import chunk_delta
 from mlx_reason_ct.errors import InvalidInputError
 from mlx_reason_ct.mlx_weights import SHARDS
@@ -25,6 +24,9 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Any = import_mlx()
 nn: Any = import_module("mlx.nn")
+# Admit Metal before loading the adapted recurrence kernels.
+gated_delta: Any = import_module("mlx_reason_ct.gated_delta")
+source_arithmetic: Any = import_module("mlx_reason_ct.source_arithmetic")
 
 
 @dataclass
@@ -73,7 +75,7 @@ class NativeModel:
         self.vision_cos: Any = mx.array(np.cos(phase))
         if self.precision == "source_bfloat16":
             self.vision_sin, self.vision_cos = source_arithmetic.vision_constants()
-        # The source constructs this non-learned buffer on CPU before .to(cuda).
+        # The source constructs this non-learned buffer on the host before transfer.
         # Metal pow differs by one ULP at six frequencies, magnified by positions.
         self.text_inv_freq: Any = mx.array(
             1 / np.power(np.float32(10000000), np.arange(0, 64, 2, dtype=np.float32) / 64)
@@ -357,7 +359,7 @@ class NativeModel:
         recurrent = state.get(
             "recurrent", mx.zeros((batch, 32, 128, 128), dtype=mx.float32)
         ).astype(mx.float32)
-        # Call the native Metal kernel directly; its generic helper permits CPU fallback.
+        # Both prefill and single-token recurrence execute on Metal.
         if length > 1:
             h, recurrent = chunk_delta(
                 q,

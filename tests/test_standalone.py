@@ -1,4 +1,4 @@
-"""Independent portable input, prompt and durable response expectations."""
+"""Independent input, prompt and durable response expectations."""
 
 import json
 from importlib import import_module
@@ -97,6 +97,7 @@ def test_response_completion_and_partial_persistence(
             save_response(tmp_path, report, metrics)
     assert (tmp_path / "report.txt").read_text() == report + "\n"
     assert json.loads((tmp_path / "model_response.json").read_text()) == {
+        "schema_version": 1,
         "report": report,
         "requires_human_review": True,
         "generation": metrics,
@@ -108,6 +109,7 @@ def test_thinking_response_separates_reasoning_from_report(tmp_path: Path) -> No
     save_response(tmp_path, "Plan the report.\n</think>\n\nFINDINGS: Normal.", metrics)
     assert (tmp_path / "report.txt").read_text() == "FINDINGS: Normal.\n"
     assert json.loads((tmp_path / "model_response.json").read_text()) == {
+        "schema_version": 1,
         "report": "FINDINGS: Normal.",
         "thinking": "Plan the report.",
         "requires_human_review": True,

@@ -6,12 +6,20 @@ from typing import Any
 
 import numpy as np
 
-from mlx_reason_ct.errors import InvalidInputError
+from mlx_reason_ct.errors import InvalidInputError, MissingDependencyError
 
 
 def load_ct(path: Path) -> tuple[np.ndarray, np.ndarray]:
-    nib: Any = import_module("nibabel")
-    image = nib.load(str(path), mmap=True)
+    try:
+        nib: Any = import_module("nibabel")
+    except ImportError as error:
+        raise MissingDependencyError(
+            "Reading CT NIfTI inputs requires nibabel; install mlx-reason-ct.",
+        ) from error
+    try:
+        image = nib.load(str(path), mmap=True)
+    except (OSError, ValueError, nib.filebasedimages.ImageFileError) as error:
+        raise InvalidInputError(f"Could not read NIfTI CT {path}: {error}") from error
     qform, qcode = image.get_qform(coded=True)
     sform, scode = image.get_sform(coded=True)
     if not qcode and not scode:
@@ -39,7 +47,10 @@ def load_ct(path: Path) -> tuple[np.ndarray, np.ndarray]:
         or abs(np.linalg.det(affine[:3, :3])) < 1e-12
     ):
         raise InvalidInputError("NIfTI spatial transform must be finite and invertible")
-    values = np.asarray(image.dataobj, dtype=np.float32)
+    try:
+        values = np.asarray(image.dataobj, dtype=np.float32)
+    except (OSError, ValueError) as error:
+        raise InvalidInputError(f"Could not read CT voxels from {path}: {error}") from error
     if values.ndim != 3 or not np.isfinite(values).all():
         raise InvalidInputError("CT input must be a finite scalar 3D HU volume")
     return values, affine

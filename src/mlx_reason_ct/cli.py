@@ -7,7 +7,7 @@ import json
 from importlib import import_module
 from pathlib import Path
 
-from mlx_reason_ct.api import generate_report
+from mlx_reason_ct.api import PRECISION_PROFILES, generate_report
 from mlx_reason_ct.mlx_weights import convert_checkpoint, read_manifest
 
 
@@ -33,6 +33,8 @@ def main() -> int:
     )
     report.add_argument("--enable-thinking", action="store_true")
     report.add_argument("--max-new-tokens", type=int, default=512)
+    report.add_argument("--precision", choices=tuple(PRECISION_PROFILES), default="float32")
+    report.add_argument("--overwrite", action="store_true", help="Replace existing report files")
     args = parser.parse_args()
     if args.command == "download":
         hub = import_module("huggingface_hub")
@@ -62,6 +64,8 @@ def main() -> int:
             anatomy_region=args.anatomy_region,
             enable_thinking=args.enable_thinking,
             max_new_tokens=args.max_new_tokens,
+            precision=args.precision,
+            overwrite=args.overwrite,
         )
         print(json.dumps(result, indent=2))
     return 0

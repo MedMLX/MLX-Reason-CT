@@ -1,4 +1,4 @@
-"""Offline FP32 generation with request-owned state and durable completion status."""
+"""Offline generation with pinned arithmetic profiles and durable completion status."""
 
 from __future__ import annotations
 
@@ -7,11 +7,76 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any, cast
 
-from mlx_reason_ct.errors import InvalidInputError, ModelExecutionError
+from mlx_reason_ct.errors import AssetNotReadyError, InvalidInputError, ModelExecutionError
 from mlx_reason_ct.mlx_weights import read_manifest
 from mlx_reason_ct.processor_mlx import Processor, VolumePrompt
-from mlx_reason_ct.response import save_response
+from mlx_reason_ct.response import ReportFiles, save_response
 from mlx_reason_ct.runtime import host_info, import_mlx
+
+PRECISION_PROFILES: dict[str, str] = {
+    "float32": "float32",
+    "bfloat16": "source_bfloat16",
+    "bfloat16_fp32": "bfloat16",
+}
+
+
+def _load_assets(model_dir: Path) -> tuple[dict[str, Any], Processor]:
+    try:
+        return read_manifest(model_dir), Processor(model_dir)
+    except (InvalidInputError, OSError, ValueError, KeyError, TypeError) as error:
+        raise AssetNotReadyError(
+            f"NV-Reason-CT converted bundle is missing or mismatched at {model_dir}: {error}",
+            reason=f"invalid converted bundle {model_dir}",
+            hint="Pass the bundle root containing mlx/manifest.json, tokenizer and FP32 shards; "
+            "download it with mlx-reason-ct download or convert the pinned source checkpoint.",
+        ) from error
+
+
+def _load_model(model_dir: Path, *, precision: str) -> Any:
+    from mlx_reason_ct.mlx_model import NativeModel
+
+    try:
+        return NativeModel(model_dir, precision=precision)
+    except (InvalidInputError, OSError, ValueError, KeyError, RuntimeError) as error:
+        raise AssetNotReadyError(
+            f"Cannot load NV-Reason-CT FP32 tensors at {model_dir}: {error}",
+            hint="Verify the converted bundle with mlx-reason-ct verify --model-dir PATH.",
+        ) from error
+
+
+def _validate_generation_options(
+    prompt: str | None,
+    anatomy_region: str,
+    enable_thinking: bool,
+    max_new_tokens: int,
+    overwrite: bool,
+    precision: str,
+) -> str:
+    if not isinstance(cast(object, precision), str) or precision not in PRECISION_PROFILES:
+        raise InvalidInputError(
+            "Unsupported NV-Reason-CT MLX precision profile; "
+            "choose float32, bfloat16 or bfloat16_fp32."
+        )
+    if anatomy_region not in {"chest", "abdomen"}:
+        raise InvalidInputError("anatomy_region must be chest or abdomen")
+    if prompt is None:
+        prompt = f"write a structured {anatomy_region} CT report"
+    # Annotations do not bind callers, so validate the runtime values.
+    token_limit = cast(object, max_new_tokens)
+    if (
+        isinstance(token_limit, bool)
+        or not isinstance(token_limit, int)
+        or not (1 <= token_limit <= 8192)
+    ):
+        raise InvalidInputError("max_new_tokens must be an integer from 1 to 8192")
+    prompt_text = cast(object, prompt)
+    if not isinstance(prompt_text, str) or not prompt_text.strip():
+        raise InvalidInputError("prompt must be nonempty text")
+    if not isinstance(cast(object, enable_thinking), bool) or not isinstance(
+        cast(object, overwrite), bool
+    ):
+        raise InvalidInputError("enable_thinking and overwrite must be booleans")
+    return prompt
 
 
 def generate(
@@ -74,44 +139,28 @@ def generate_report(
     enable_thinking: bool = False,
     max_new_tokens: int = 512,
     precision: str = "float32",
+    overwrite: bool = False,
 ) -> dict[str, object]:
     """Run one HU NIfTI CT locally on Metal; retain partial output on truncation.
 
     Without a prompt, a structured report for ``anatomy_region`` is requested.
+    Existing report files require ``overwrite=True`` to replace.
     """
-    if precision not in {"float32", "bfloat16", "bfloat16_fp32"}:
-        raise InvalidInputError("Unsupported NV-Reason-CT MLX precision profile")
-    if anatomy_region not in {"chest", "abdomen"}:
-        raise InvalidInputError("anatomy_region must be chest or abdomen")
-    if prompt is None:
-        prompt = f"write a structured {anatomy_region} CT report"
-    # Annotations do not bind callers, so validate the runtime values.
-    token_limit = cast(object, max_new_tokens)
-    if (
-        isinstance(token_limit, bool)
-        or not isinstance(token_limit, int)
-        or not (1 <= token_limit <= 8192)
-    ):
-        raise InvalidInputError("max_new_tokens must be an integer from 1 to 8192")
-    prompt_text = cast(object, prompt)
-    if not isinstance(prompt_text, str) or not prompt_text.strip():
-        raise InvalidInputError("prompt must be nonempty text")
-    model_dir, output_dir = Path(model_dir), Path(output_dir)
-    manifest = read_manifest(model_dir)
-    processor = Processor(model_dir)
+    prompt = _validate_generation_options(
+        prompt, anatomy_region, enable_thinking, max_new_tokens, overwrite, precision
+    )
+    model_dir = Path(model_dir).expanduser().resolve()
+    output_dir = Path(output_dir).expanduser().resolve()
+    files = ReportFiles(output_dir)
+    files.require_writable(overwrite=overwrite)
+    manifest, processor = _load_assets(model_dir)
     pixels, crop = processor.image(Path(source), anatomy_region)
     inputs = processor.prompt(prompt, enable_thinking)
     mx = import_mlx()
-    from mlx_reason_ct.mlx_model import NativeModel
-
     started = perf_counter()
     mx.reset_peak_memory()
-    native_profile = {
-        "float32": "float32",
-        "bfloat16": "source_bfloat16",
-        "bfloat16_fp32": "bfloat16",
-    }[precision]
-    model = NativeModel(model_dir, precision=native_profile)
+    native_profile = PRECISION_PROFILES[precision]
+    model = _load_model(model_dir, precision=native_profile)
     features, embeddings = model.vision(mx.array(pixels))
     if not bool(mx.all(mx.isfinite(embeddings)).item()):
         raise ModelExecutionError("NV-Reason-CT produced nonfinite image embeddings")
@@ -128,8 +177,10 @@ def generate_report(
             "synchronization": "mx.eval per layer/token and mx.synchronize",
         }
     )
+    files.require_writable(overwrite=overwrite)
     output_dir.mkdir(parents=True, exist_ok=True)
     result: dict[str, object] = {
+        "schema_version": 1,
         "schema": "nv_reason_ct_mlx.run.v1",
         "status": "succeeded",
         "source": str(Path(source)),
@@ -148,7 +199,7 @@ def generate_report(
         save_response(output_dir, processor.decode(tokens), metrics)
     except ModelExecutionError as error:
         result.update(status="failed", error=str(error))
-        (output_dir / "run.json").write_text(json.dumps(result, indent=2) + "\n")
+        Path(files.outputs()["run"]).write_text(json.dumps(result, indent=2) + "\n")
         raise
-    (output_dir / "run.json").write_text(json.dumps(result, indent=2) + "\n")
+    Path(files.outputs()["run"]).write_text(json.dumps(result, indent=2) + "\n")
     return result

@@ -11,8 +11,10 @@ requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [{name = "Joseph Sandoval"}]
+classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
+  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@v0.1.0",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",
@@ -25,6 +27,9 @@ dependencies = [
 
 [project.scripts]
 mlx-reason-ct = "mlx_reason_ct.cli:main"
+
+[project.entry-points."medmlx.models"]
+mlx-reason-ct = "mlx_reason_ct.medmlx:MODEL"
 
 [project.urls]
 Homepage = "https://github.com/MedMLX/MLX-Reason-CT"
@@ -42,6 +47,13 @@ packages = ["src/mlx_reason_ct"]
 [tool.hatch.build.targets.wheel.force-include]
 "SOURCE.md" = "mlx_reason_ct/SOURCE.md"
 
+[tool.hatch.metadata]
+allow-direct-references = true
+
+[tool.uv]
+environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
+required-environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100
@@ -52,7 +64,7 @@ select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
 include = ["src", "tests"]
-# Preserve the pinned vendored bytes; gated_delta.pyi provides its public types.
+# The adapted vendored Metal kernels expose their types through gated_delta.pyi.
 exclude = ["src/mlx_reason_ct/gated_delta.py"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"

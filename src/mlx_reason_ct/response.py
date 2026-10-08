@@ -4,11 +4,36 @@ from __future__ import annotations
 
 import json
 from collections.abc import Mapping
+from dataclasses import dataclass
 from pathlib import Path
 
-from mlx_reason_ct.errors import ModelExecutionError
+from mlx_reason_ct.errors import InvalidInputError, ModelExecutionError
 
 THINK_END = "</think>"
+
+
+@dataclass(frozen=True, slots=True)
+class ReportFiles:
+    """The report and provenance files owned by one generation request."""
+
+    directory: Path
+
+    def outputs(self) -> dict[str, str]:
+        return {
+            "report": (self.directory / "report.txt").as_posix(),
+            "response": (self.directory / "model_response.json").as_posix(),
+            "run": (self.directory / "run.json").as_posix(),
+        }
+
+    def require_writable(self, *, overwrite: bool) -> None:
+        if self.directory.exists() and not self.directory.is_dir():
+            raise InvalidInputError(f"output_dir is not a directory: {self.directory}")
+        for value in self.outputs().values():
+            path = Path(value)
+            if path.is_dir():
+                raise InvalidInputError(f"Output is a directory: {path}; choose another output_dir")
+            if (path.exists() or path.is_symlink()) and not overwrite:
+                raise InvalidInputError(f"Output exists: {path}; pass overwrite=true to replace it")
 
 
 def split_thinking(response: str) -> tuple[str | None, str]:
@@ -25,11 +50,12 @@ def split_thinking(response: str) -> tuple[str | None, str]:
 
 
 def save_response(output_dir: Path, response: str, metrics: Mapping[str, object]) -> dict[str, str]:
-    report_path = output_dir / "report.txt"
-    response_path = output_dir / "model_response.json"
+    outputs = ReportFiles(output_dir).outputs()
+    report_path = Path(outputs["report"])
+    response_path = Path(outputs["response"])
     thinking, report = split_thinking(response)
     report_path.write_text(report + "\n", encoding="utf-8")
-    record: dict[str, object] = {"report": report}
+    record: dict[str, object] = {"schema_version": 1, "report": report}
     if thinking is not None:
         record["thinking"] = thinking
     record.update(requires_human_review=True, generation=metrics)

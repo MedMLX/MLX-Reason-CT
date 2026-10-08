@@ -1,4 +1,4 @@
-"""Streaming file integrity for portable model bundles."""
+"""Streaming file integrity for local model bundles."""
 
 import hashlib
 from pathlib import Path

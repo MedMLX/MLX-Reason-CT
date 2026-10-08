@@ -21,7 +21,7 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - Chest and abdomen CT
 - Structured reports and CT question answering
 - Local NIfTI input with Apple Silicon GPU acceleration
-- FP32 inference using MLX; no PyTorch or CUDA required
+- FP32 by default, with explicit BF16 arithmetic profiles on Metal
 
 MLX port by **Joseph Sandoval**.
 [PyPI](https://pypi.org/project/mlx-reason-ct/) ·
@@ -33,7 +33,9 @@ MLX port by **Joseph Sandoval**.
 
 ## Requirements
 
-Apple Silicon Mac, macOS, Python 3.12 and [uv](https://docs.astral.sh/uv/).
+Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
+Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
+Metal is unavailable.
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
 
@@ -85,10 +87,10 @@ Each run writes:
 
 ## Technical details
 
-This release uses FP32 inference with weights converted directly from the
+Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining.
 [Implementation and verification details](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md),
-including token-exact parity with the CUDA source model on real CT, are in the companion repository.
+and the limits of its darwin-arm64 component references are in the companion repository.
 [Upstream model card and limitations](https://huggingface.co/josand/MLX-Reason-CT/blob/main/upstream_model_card.md).
 
 ## Intended use
