@@ -1,4 +1,4 @@
-"""Offline exact BF16-to-FP32 conversion and provenance-bound native cache admission."""
+"""Offline exact BF16-to-FP32 conversion and model bundle provenance verification."""
 
 from __future__ import annotations
 
@@ -153,7 +153,7 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
             target = output_dir / name
             target.parent.mkdir(parents=True, exist_ok=True)
             shutil.copyfile(model_dir / name, target)
-        # The manifest is the final admission marker, never a partially written conversion.
+        # Publish the manifest last so it never marks a partially written conversion complete.
         (destination / "manifest.json").unlink(missing_ok=True)
         for name in hashes:
             (staged / name).replace(destination / name)

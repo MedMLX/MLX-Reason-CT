@@ -11,6 +11,7 @@ requires-python = ">=3.12,<3.13"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [{name = "Joseph Sandoval"}]
+keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
   "numpy==2.3.5",
   "scipy==1.18.1",
@@ -27,6 +28,8 @@ mlx-reason-ct = "mlx_reason_ct.cli:main"
 
 [project.urls]
 Repository = "https://github.com/sandovaljoseph/MLX-Reason-CT"
+Documentation = "https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md"
+Issues = "https://github.com/sandovaljoseph/MLX-Reason-CT/issues"
 Weights = "https://huggingface.co/josand/MLX-Reason-CT"
 
 [dependency-groups]
