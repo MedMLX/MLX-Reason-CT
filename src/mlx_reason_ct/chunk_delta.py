@@ -1,8 +1,8 @@
 """Metal implementation of Transformers 5.10.4's 64-token gated-delta prefill.
 
-The chunk algebra and FP32 boundaries follow torch_chunk_gated_delta_rule.
-Sequential recurrence is mathematically equivalent but accumulated enough drift
-over the 13,824 image tokens to fail the declared hidden-state qualification.
+The chunk algebra and FP32 accumulation boundaries follow torch_chunk_gated_delta_rule.
+Sequential recurrence can produce materially different hidden states over
+long CT token sequences.
 """
 
 from __future__ import annotations

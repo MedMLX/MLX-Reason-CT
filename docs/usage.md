@@ -13,6 +13,9 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
+The examples below use `mlx-reason-ct` 0.2.1, which includes the MedMLX runner,
+explicit precision profiles and overwrite controls.
+
 ```python
 from mlx_reason_ct import generate_report
 
@@ -27,7 +30,7 @@ generate_report(
 ```
 
 Without `--prompt`, a structured report for `--anatomy-region` is requested.
-Inference is local and uses FP32 MLX on the Apple Silicon GPU. Add `--enable-thinking` to
+Inference runs locally on the Apple Silicon GPU, using FP32 by default. Add `--enable-thinking` to
 use the source template's thinking mode; the reasoning is saved as `thinking` in
 `model_response.json` and `report.txt` holds only the answer. Each request owns
 its decoder state.
@@ -69,7 +72,7 @@ All arguments are keyword-only. Set `prompt` to a CT question,
 an abdominal report. `precision="float32"` remains the default;
 `precision="bfloat16"` selects the source BF16 arithmetic profile and
 `precision="bfloat16_fp32"` selects BF16 weights with FP32 accumulation and
-decoding. These profiles retain the upstream qualification limits described in
+decoding. Their numerical behavior and verification limitations are described in
 [SOURCE.md](../SOURCE.md). Generation remains greedy. Existing output files require
 `overwrite=True`; this guard also applies to the public `generate_report` API.
 The CLI accepts `--overwrite` for the same action and `--precision` for profile selection.
@@ -84,7 +87,7 @@ JSON records carry `schema_version=1`. Reports require human review.
 
 Runner tests cover synthetic input, asset validation and report orchestration.
 The fixed production network has no tiny configurable variant; these tests do
-not qualify learned report generation or clinical performance.
+not establish learned report accuracy or clinical performance.
 
 ## Weights
 
@@ -99,6 +102,17 @@ without retraining, rejects changed source assets and validates tied weights.
 The disconnected 2D tower, unused mask token and duplicate LM head are excluded.
 The converted bundle verifies runtime metadata and all 35 shard hashes.
 
+The published model bundle contains:
+
+| Purpose | Files |
+| --- | --- |
+| Model presentation | `README.md`, `.gitattributes` |
+| License and attribution | NVIDIA `LICENSE`, Qwen `APACHE-2.0.txt` |
+| Model configuration | `config.json`, `generation_config.json` |
+| Text processing | `chat_template.jinja`, `tokenizer.json` |
+| CT preprocessing | `image_processor_3d/preprocessor_config.json` |
+| Converted weights | `mlx/manifest.json`, 35 FP32 safetensors shards |
+
 ## Implementation
 
 The runtime implements the 3D vision encoder, multimodal projection and Qwen3.5
@@ -110,6 +124,7 @@ and fails explicitly when Metal is unavailable.
 ## Development and verification
 
 ```bash
+make env
 make qa
 make build
 ```
@@ -119,9 +134,3 @@ rounding bounds, host-stage checks and Metal tests. These checks establish no
 full-model parity, clinical validation or report accuracy.
 
 See [third-party terms](../THIRD_PARTY_NOTICES.md).
-
-Python callers can select `precision="bfloat16"` for source BF16 arithmetic or
-`precision="bfloat16_fp32"` for BF16 weights with FP32 arithmetic. The CLI accepts
-`--precision` with the same names; its default remains FP32. These profiles all
-execute on Metal. Existing output files require `overwrite=True` in Python or
-`--overwrite` on the CLI.

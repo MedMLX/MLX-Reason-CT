@@ -17,7 +17,7 @@ python scripts/record_arithmetic_reference.py
 
 Tests load this single reference directly. There is no platform/backend key or
 alternative fixture directory, and the recording script is not imported at test
-time. Recording analytic expectations does not execute or qualify Metal.
+time. Recording analytic expectations does not execute Metal.
 
 FP32 accumulation comparisons use `gamma(n) = n*u/(1-n*u)`, with
 `u = 2**-24`, for the seeded, well-conditioned sums. Projection error scales
@@ -28,11 +28,8 @@ FP32 epsilons for exponential/division approximations. Exact equality is retaine
 for discrete contracts, lossless conversion, and copies/casts within one MLX run.
 The existing independent recurrent-state comparison keeps its original bounds.
 
-Foreign-platform bitwise comparisons, input-byte fingerprints and hardware-specific
-row/projection recordings were removed. These tests check the mathematical and
-storage contracts without pinning another execution platform's rounding tree.
-Historical model qualification receipts are not current test references and were
-removed from the package documentation.
+These tests check mathematical and storage contracts using rounding bounds,
+without requiring bitwise agreement with another platform's reduction order.
 
 ## Checks
 

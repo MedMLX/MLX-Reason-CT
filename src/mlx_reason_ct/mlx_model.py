@@ -1,8 +1,8 @@
 """Native Metal Primus, multimodal projection and Qwen3.5 hybrid decoding.
 
-All learned arithmetic runs on Metal. Internal arithmetic identities retain
-the pinned receipt names: source_bfloat16 preserves NVIDIA's BF16 cast/cache
-boundaries; bfloat16 stores BF16 weights with FP32 accumulation and decoding.
+All learned arithmetic runs on Metal. The source_bfloat16 profile preserves
+NVIDIA's BF16 cast/cache boundaries; bfloat16 stores BF16 weights with FP32
+accumulation and decoding.
 Public bfloat16 selects source_bfloat16; public bfloat16_fp32 selects bfloat16.
 Source layouts remain visible in the converted cache.
 """

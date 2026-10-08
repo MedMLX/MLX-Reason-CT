@@ -40,12 +40,9 @@ The recurrent kernels derive from MLX-LM 0.32.0
 The adapted file hash is
 `3a4c89d96ef40829423cf0eb0eed37420c3bd5256b675e5d99bb2cd797e874d7`.
 
-The Apple-only cutover removed `gated_delta_update`, `gated_delta_ops`, their
-single-step operation helper, unused gate/normalization helpers, and redundant
-kernel-factory probes that returned `None`. MLX now loads through the shared
-runtime. Metal kernel bodies and their dispatch remain unchanged. Retaining the
-unused host fallback was rejected because it contradicted the supported runtime.
-The package initializer and MedMLX declaration remain lazy.
+MLX loads through the shared runtime before the recurrent kernels. The adapted
+implementation retains the Metal kernel bodies and dispatch, with no host
+inference path. The package initializer and MedMLX declaration remain lazy.
 
 The multi-token prefill retains Transformers' 64-token chunk algebra. Its
 Sklansky scan, activation formulas, normalization, projection stores and
@@ -59,13 +56,12 @@ MIT/BSD notices remain in `src/mlx_reason_ct/licenses/`.
 encoded, model-independent unary/rotary constants. Their original encoding and
 source provenance are retained; they are not selectable execution backends or
 platform-keyed test fixtures. They contain no learned parameters or case-specific
-neural outputs. Removing this Metal arithmetic to erase source-platform names
-was rejected because it would change the model.
+neural outputs. Their source operation order and rounding behavior are part of
+the model's arithmetic contract.
 
 ## Current test references
 
-Historical foreign-platform bit-pattern fixtures and qualification receipts were
-retired. Tests use one reference recorded on darwin-arm64 by
+Tests use one reference recorded on darwin-arm64 by
 `scripts/record_arithmetic_reference.py`. It records seeded NumPy float64 formulas
 and explicit BF16 rounding; it does not import production arithmetic or execute
 Metal. Tests check numerical properties with rounding bounds, output dtypes,
