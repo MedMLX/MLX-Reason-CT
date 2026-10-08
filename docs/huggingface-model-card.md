@@ -13,7 +13,7 @@ tags:
 - nv-reason-ct
 ---
 
-# NV-Reason-CT MLX
+# MLX-Reason-CT
 
 Native MLX port of [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT)
 for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
@@ -24,10 +24,10 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - FP32 inference using MLX; no PyTorch or CUDA required
 
 MLX port by **Joseph Sandoval**.
-[GitHub](https://github.com/sandovaljoseph/NV-Reason-CT-MLX) ·
-[Usage](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/docs/usage.md)
+[GitHub](https://github.com/sandovaljoseph/MLX-Reason-CT) ·
+[Usage](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md)
 
-**Requires the companion `nv-reason-ct-mlx` runtime.** Generic `mlx-vlm` and
+**Requires the companion `mlx-reason-ct` runtime.** Generic `mlx-vlm` and
 `mlx-lm` examples do not support this 3D CT model.
 
 ## Requirements
@@ -39,11 +39,11 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-git clone https://github.com/sandovaljoseph/NV-Reason-CT-MLX.git
-cd NV-Reason-CT-MLX
+git clone https://github.com/sandovaljoseph/MLX-Reason-CT.git
+cd MLX-Reason-CT
 make env
 
-uv run nv-reason-ct-mlx download \
+uv run mlx-reason-ct download \
   --revision e15558ae30c8ad6c25c0bfcce7467cc72cd0b2f2 \
   --model-dir models
 ```
@@ -51,14 +51,14 @@ uv run nv-reason-ct-mlx download \
 Generate a chest CT report:
 
 ```bash
-uv run nv-reason-ct-mlx report \
+uv run mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs
 ```
 
 For abdomen CT:
 
 ```bash
-uv run nv-reason-ct-mlx report \
+uv run mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs \
   --anatomy-region abdomen
 ```
@@ -84,9 +84,9 @@ Each run writes:
 
 This release uses FP32 inference with weights converted directly from the
 original BF16 checkpoint, without retraining.
-[Implementation and verification details](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/docs/usage.md),
+[Implementation and verification details](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md),
 including token-exact parity with the CUDA source model on real CT, are in the companion repository.
-[Upstream model card and limitations](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/upstream_model_card.md).
+[Upstream model card and limitations](https://huggingface.co/josand/MLX-Reason-CT/blob/main/upstream_model_card.md).
 
 ## Intended use
 
@@ -95,10 +95,10 @@ Outputs require human review.
 
 ## License
 
-Weights: [OpenMDW-1.1](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/LICENSE),
+Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LICENSE),
 Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES.
-Underlying Qwen3.5 terms: [Apache-2.0](https://huggingface.co/josand/NV-Reason-CT-MLX/blob/main/APACHE-2.0.txt).
+Underlying Qwen3.5 terms: [Apache-2.0](https://huggingface.co/josand/MLX-Reason-CT/blob/main/APACHE-2.0.txt).
 
-Port code: [Apache-2.0](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/LICENSE),
+Port code: [Apache-2.0](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/LICENSE),
 Copyright (c) 2026 Joseph Sandoval.
-[Third-party notices](https://github.com/sandovaljoseph/NV-Reason-CT-MLX/blob/main/THIRD_PARTY_NOTICES.md).
+[Third-party notices](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).

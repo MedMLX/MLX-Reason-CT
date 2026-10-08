@@ -1,4 +1,4 @@
-# NV-Reason-CT MLX
+# MLX-Reason-CT
 
 Native MLX port of [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT)
 for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
@@ -9,7 +9,7 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - FP32 inference using MLX; no PyTorch or CUDA required
 
 MLX port by **Joseph Sandoval**.
-[Weights](https://huggingface.co/josand/NV-Reason-CT-MLX) · [Usage](docs/usage.md)
+[Weights](https://huggingface.co/josand/MLX-Reason-CT) · [Usage](docs/usage.md)
 
 ## Requirements
 
@@ -20,11 +20,11 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-git clone https://github.com/sandovaljoseph/NV-Reason-CT-MLX.git
-cd NV-Reason-CT-MLX
+git clone https://github.com/sandovaljoseph/MLX-Reason-CT.git
+cd MLX-Reason-CT
 make env
 
-uv run nv-reason-ct-mlx download \
+uv run mlx-reason-ct download \
   --revision e15558ae30c8ad6c25c0bfcce7467cc72cd0b2f2 \
   --model-dir models
 ```
@@ -32,14 +32,14 @@ uv run nv-reason-ct-mlx download \
 Generate a chest CT report:
 
 ```bash
-uv run nv-reason-ct-mlx report \
+uv run mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs
 ```
 
 For abdomen CT:
 
 ```bash
-uv run nv-reason-ct-mlx report \
+uv run mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs \
   --anatomy-region abdomen
 ```

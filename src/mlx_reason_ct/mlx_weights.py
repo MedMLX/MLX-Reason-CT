@@ -14,8 +14,8 @@ from typing import Any, cast
 
 import numpy as np
 
-from nv_reason_ct_mlx.errors import InvalidInputError
-from nv_reason_ct_mlx.integrity import file_sha256
+from mlx_reason_ct.errors import InvalidInputError
+from mlx_reason_ct.integrity import file_sha256
 
 REVISION = "386b93e034983f6c1fc841a43833a1b6a0cd9c13"
 ENGINE = "nv_reason_ct_mlx.fp32.v1"
@@ -50,7 +50,7 @@ def read_manifest(model_dir: Path) -> dict[str, Any]:
             raise InvalidInputError(f"NV-Reason-CT runtime asset changed: {name}")
     payload: object = json.loads((model_dir / MANIFEST).read_text())
     if not isinstance(payload, dict):
-        raise InvalidInputError("NV-Reason-CT MLX cache manifest must be an object")
+        raise InvalidInputError("MLX-Reason-CT cache manifest must be an object")
     manifest = cast(dict[str, Any], payload)
     if (
         manifest.get("engine") != ENGINE
@@ -59,18 +59,16 @@ def read_manifest(model_dir: Path) -> dict[str, Any]:
         or manifest.get("dtype") != "float32"
         or manifest.get("runtime_sha256") != {name: PINS[name] for name in RUNTIME_FILES}
     ):
-        raise InvalidInputError(
-            "NV-Reason-CT MLX cache provenance differs from the pinned conversion"
-        )
+        raise InvalidInputError("MLX-Reason-CT cache provenance differs from the pinned conversion")
     inventory: object = manifest.get("shards", {})
     if not isinstance(inventory, dict):
-        raise InvalidInputError("NV-Reason-CT MLX cache shard inventory must be an object")
+        raise InvalidInputError("MLX-Reason-CT cache shard inventory must be an object")
     shards = cast(dict[str, str], inventory)
     if set(shards) != set(SHARDS):
-        raise InvalidInputError("NV-Reason-CT MLX cache has an invalid shard inventory")
+        raise InvalidInputError("MLX-Reason-CT cache has an invalid shard inventory")
     for name, digest in shards.items():
         if file_sha256(model_dir / "mlx" / name) != digest:
-            raise InvalidInputError(f"NV-Reason-CT MLX cache integrity failure: {name}")
+            raise InvalidInputError(f"MLX-Reason-CT cache integrity failure: {name}")
     return manifest
 
 

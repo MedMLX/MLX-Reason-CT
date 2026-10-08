@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from nv_reason_ct_mlx.errors import ModelExecutionError
+from mlx_reason_ct.errors import ModelExecutionError
 
 THINK_END = "</think>"
 

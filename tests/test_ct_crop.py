@@ -9,7 +9,7 @@ from typing import Any
 import numpy as np
 import pytest
 
-from nv_reason_ct_mlx.ct_crop import anatomy_crop, load_anatomy_ct
+from mlx_reason_ct.ct_crop import anatomy_crop, load_anatomy_ct
 
 nib: Any = import_module("nibabel")
 

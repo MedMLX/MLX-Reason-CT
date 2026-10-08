@@ -7,11 +7,11 @@ from pathlib import Path
 from time import perf_counter
 from typing import Any
 
-from nv_reason_ct_mlx.errors import InvalidInputError, ModelExecutionError
-from nv_reason_ct_mlx.mlx_weights import read_manifest
-from nv_reason_ct_mlx.processor_mlx import Processor, VolumePrompt
-from nv_reason_ct_mlx.response import save_response
-from nv_reason_ct_mlx.runtime import host_info, import_mlx
+from mlx_reason_ct.errors import InvalidInputError, ModelExecutionError
+from mlx_reason_ct.mlx_weights import read_manifest
+from mlx_reason_ct.processor_mlx import Processor, VolumePrompt
+from mlx_reason_ct.response import save_response
+from mlx_reason_ct.runtime import host_info, import_mlx
 
 
 def generate(
@@ -96,7 +96,7 @@ def generate_report(
     pixels, crop = processor.image(Path(source), anatomy_region)
     inputs = processor.prompt(prompt, enable_thinking)
     mx = import_mlx()
-    from nv_reason_ct_mlx.mlx_model import NativeModel
+    from mlx_reason_ct.mlx_model import NativeModel
 
     started = perf_counter()
     mx.reset_peak_memory()

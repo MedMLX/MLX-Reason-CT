@@ -13,11 +13,11 @@ from typing import Any
 
 import numpy as np
 
-from nv_reason_ct_mlx import gated_delta
-from nv_reason_ct_mlx.chunk_delta import chunk_delta
-from nv_reason_ct_mlx.errors import InvalidInputError
-from nv_reason_ct_mlx.mlx_weights import SHARDS
-from nv_reason_ct_mlx.runtime import import_mlx
+from mlx_reason_ct import gated_delta
+from mlx_reason_ct.chunk_delta import chunk_delta
+from mlx_reason_ct.errors import InvalidInputError
+from mlx_reason_ct.mlx_weights import SHARDS
+from mlx_reason_ct.runtime import import_mlx
 
 mx: Any = import_mlx()
 nn: Any = import_module("mlx.nn")

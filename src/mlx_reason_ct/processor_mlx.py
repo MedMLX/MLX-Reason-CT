@@ -11,8 +11,8 @@ from typing import Any, cast
 import numpy as np
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 
-from nv_reason_ct_mlx.ct_crop import CTCrop, load_anatomy_ct
-from nv_reason_ct_mlx.errors import InvalidPromptError
+from mlx_reason_ct.ct_crop import CTCrop, load_anatomy_ct
+from mlx_reason_ct.errors import InvalidPromptError
 
 
 @dataclass(frozen=True)

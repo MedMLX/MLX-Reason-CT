@@ -210,6 +210,47 @@ wheels = [
 ]
 
 [[package]]
+name = "mlx-reason-ct"
+version = "0.1.0"
+source = { editable = "." }
+dependencies = [
+    { name = "huggingface-hub" },
+    { name = "jinja2" },
+    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'" },
+    { name = "nibabel" },
+    { name = "numpy" },
+    { name = "safetensors" },
+    { name = "scipy" },
+    { name = "tokenizers" },
+]
+
+[package.dev-dependencies]
+dev = [
+    { name = "pyright", extra = ["nodejs"] },
+    { name = "pytest" },
+    { name = "ruff" },
+]
+
+[package.metadata]
+requires-dist = [
+    { name = "huggingface-hub", specifier = "==1.23.0" },
+    { name = "jinja2", specifier = "==3.1.6" },
+    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.2" },
+    { name = "nibabel", specifier = "==5.4.2" },
+    { name = "numpy", specifier = "==2.3.5" },
+    { name = "safetensors", specifier = "==0.8.0" },
+    { name = "scipy", specifier = "==1.18.1" },
+    { name = "tokenizers", specifier = "==0.22.2" },
+]
+
+[package.metadata.requires-dev]
+dev = [
+    { name = "pyright", extras = ["nodejs"], specifier = "==1.1.411" },
+    { name = "pytest", specifier = "==9.1.1" },
+    { name = "ruff", specifier = "==0.15.21" },
+]
+
+[[package]]
 name = "nibabel"
 version = "5.4.2"
 source = { registry = "https://pypi.org/simple" }
@@ -265,47 +306,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/05/79/ccbd23a75862d95af03d28b5c6901a1b7da4803181513d52f3b86ed9446e/numpy-2.3.5-cp312-cp312-win32.whl", hash = "sha256:3997b5b3c9a771e157f9aae01dd579ee35ad7109be18db0e85dbdbe1de06e952", size = 6285274, upload-time = "2025-11-16T22:50:10.746Z" },
     { url = "https://files.pythonhosted.org/packages/2d/57/8aeaf160312f7f489dea47ab61e430b5cb051f59a98ae68b7133ce8fa06a/numpy-2.3.5-cp312-cp312-win_amd64.whl", hash = "sha256:86945f2ee6d10cdfd67bcb4069c1662dd711f7e2a4343db5cecec06b87cf31aa", size = 12782922, upload-time = "2025-11-16T22:50:12.811Z" },
     { url = "https://files.pythonhosted.org/packages/78/a6/aae5cc2ca78c45e64b9ef22f089141d661516856cf7c8a54ba434576900d/numpy-2.3.5-cp312-cp312-win_arm64.whl", hash = "sha256:f28620fe26bee16243be2b7b874da327312240a7cdc38b769a697578d2100013", size = 10194667, upload-time = "2025-11-16T22:50:16.16Z" },
-]
-
-[[package]]
-name = "nv-reason-ct-mlx"
-version = "0.1.0"
-source = { editable = "." }
-dependencies = [
-    { name = "huggingface-hub" },
-    { name = "jinja2" },
-    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'" },
-    { name = "nibabel" },
-    { name = "numpy" },
-    { name = "safetensors" },
-    { name = "scipy" },
-    { name = "tokenizers" },
-]
-
-[package.dev-dependencies]
-dev = [
-    { name = "pyright", extra = ["nodejs"] },
-    { name = "pytest" },
-    { name = "ruff" },
-]
-
-[package.metadata]
-requires-dist = [
-    { name = "huggingface-hub", specifier = "==1.23.0" },
-    { name = "jinja2", specifier = "==3.1.6" },
-    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.2" },
-    { name = "nibabel", specifier = "==5.4.2" },
-    { name = "numpy", specifier = "==2.3.5" },
-    { name = "safetensors", specifier = "==0.8.0" },
-    { name = "scipy", specifier = "==1.18.1" },
-    { name = "tokenizers", specifier = "==0.22.2" },
-]
-
-[package.metadata.requires-dev]
-dev = [
-    { name = "pyright", extras = ["nodejs"], specifier = "==1.1.411" },
-    { name = "pytest", specifier = "==9.1.1" },
-    { name = "ruff", specifier = "==0.15.21" },
 ]
 
 [[package]]

@@ -16,7 +16,7 @@ from typing import Any
 
 import numpy as np
 
-from nv_reason_ct_mlx.nifti import load_ct
+from mlx_reason_ct.nifti import load_ct
 
 ndimage: Any = import_module("scipy.ndimage")
 

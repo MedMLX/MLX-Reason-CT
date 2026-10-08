@@ -6,7 +6,7 @@ from typing import Any
 
 import numpy as np
 
-from nv_reason_ct_mlx.errors import InvalidInputError
+from mlx_reason_ct.errors import InvalidInputError
 
 
 def load_ct(path: Path) -> tuple[np.ndarray, np.ndarray]:

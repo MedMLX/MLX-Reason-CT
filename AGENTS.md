@@ -1,7 +1,7 @@
-# NV-Reason-CT MLX
+# MLX-Reason-CT
 
-- Project: NV-Reason-CT MLX; package/CLI: `nv-reason-ct-mlx`.
-- Repository: `sandovaljoseph/NV-Reason-CT-MLX`; public code repository; retain separate model-material licensing.
+- Project: MLX-Reason-CT; package/CLI: `mlx-reason-ct`.
+- Repository: `sandovaljoseph/MLX-Reason-CT`; public code repository; retain separate model-material licensing.
 - Preset: base. Python 3.12; pinned dependencies in `pyproject.toml` and `uv.lock`.
 - Inference: macOS Apple Silicon Metal only, FP32 only. CPU preprocessing,
   conversion and bundle verification are portable. No runtime fallback.

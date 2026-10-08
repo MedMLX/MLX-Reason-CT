@@ -3,7 +3,7 @@ requires = ["hatchling==1.29.0"]
 build-backend = "hatchling.build"
 
 [project]
-name = "nv-reason-ct-mlx"
+name = "mlx-reason-ct"
 version = "0.1.0"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
@@ -23,29 +23,29 @@ dependencies = [
 ]
 
 [project.scripts]
-nv-reason-ct-mlx = "nv_reason_ct_mlx.cli:main"
+mlx-reason-ct = "mlx_reason_ct.cli:main"
 
 [project.urls]
-Repository = "https://github.com/sandovaljoseph/NV-Reason-CT-MLX"
-Weights = "https://huggingface.co/josand/NV-Reason-CT-MLX"
+Repository = "https://github.com/sandovaljoseph/MLX-Reason-CT"
+Weights = "https://huggingface.co/josand/MLX-Reason-CT"
 
 [dependency-groups]
 dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright[nodejs]==1.1.411"]
 
 [tool.hatch.build.targets.wheel]
-packages = ["src/nv_reason_ct_mlx"]
+packages = ["src/mlx_reason_ct"]
 
 [tool.ruff]
 target-version = "py312"
 line-length = 100
-extend-exclude = ["src/nv_reason_ct_mlx/gated_delta.py"]
+extend-exclude = ["src/mlx_reason_ct/gated_delta.py"]
 
 [tool.ruff.lint]
 select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
 include = ["src", "tests"]
-exclude = ["src/nv_reason_ct_mlx/gated_delta.py"]
+exclude = ["src/mlx_reason_ct/gated_delta.py"]
 pythonVersion = "3.12"
 typeCheckingMode = "basic"
 venvPath = "."

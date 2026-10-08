@@ -10,7 +10,7 @@ from __future__ import annotations
 import math
 from typing import Any
 
-from nv_reason_ct_mlx.runtime import import_mlx
+from mlx_reason_ct.runtime import import_mlx
 
 mx: Any = import_mlx()
 

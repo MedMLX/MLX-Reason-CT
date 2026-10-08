@@ -5,7 +5,7 @@ from importlib import import_module
 from importlib.metadata import version
 from typing import Any
 
-from nv_reason_ct_mlx.errors import MissingDependencyError
+from mlx_reason_ct.errors import MissingDependencyError
 
 
 def import_mlx() -> Any:

@@ -6,7 +6,7 @@ Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
 `chest` (the default) or `abdomen` to match the CT.
 
 ```bash
-uv run nv-reason-ct-mlx report \
+uv run mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs \
   --prompt "What imaging modality is shown? Answer briefly."
 ```
@@ -14,7 +14,7 @@ uv run nv-reason-ct-mlx report \
 ## Python API
 
 ```python
-from nv_reason_ct_mlx import generate_report
+from mlx_reason_ct import generate_report
 
 generate_report(
     "ct.nii.gz", "outputs",
@@ -44,8 +44,8 @@ record. Increase `--max-new-tokens` if needed; the supported range is 1–8192.
 ## Weights
 
 ```bash
-uv run nv-reason-ct-mlx verify --model-dir models
-uv run nv-reason-ct-mlx convert --source-dir /path/to/upstream --output-dir models
+uv run mlx-reason-ct verify --model-dir models
+uv run mlx-reason-ct convert --source-dir /path/to/upstream --output-dir models
 ```
 
 Conversion requires the complete pinned upstream snapshot at revision

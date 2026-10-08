@@ -7,15 +7,15 @@ import json
 from importlib import import_module
 from pathlib import Path
 
-from nv_reason_ct_mlx.api import generate_report
-from nv_reason_ct_mlx.mlx_weights import convert_checkpoint, read_manifest
+from mlx_reason_ct.api import generate_report
+from mlx_reason_ct.mlx_weights import convert_checkpoint, read_manifest
 
 
 def main() -> int:
-    parser = argparse.ArgumentParser(prog="nv-reason-ct-mlx", description=__doc__)
+    parser = argparse.ArgumentParser(prog="mlx-reason-ct", description=__doc__)
     commands = parser.add_subparsers(dest="command", required=True)
     download = commands.add_parser("download", help="Download the FP32 bundle")
-    download.add_argument("--repo", default="josand/NV-Reason-CT-MLX")
+    download.add_argument("--repo", default="josand/MLX-Reason-CT")
     download.add_argument("--revision", required=True, help="Pinned Hub commit")
     download.add_argument("--model-dir", type=Path, required=True)
     verify = commands.add_parser("verify", help="Verify every bundled file and FP32 shard")

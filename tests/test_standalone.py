@@ -8,10 +8,10 @@ from typing import Any
 import numpy as np
 import pytest
 
-from nv_reason_ct_mlx.errors import InvalidInputError, InvalidPromptError, ModelExecutionError
-from nv_reason_ct_mlx.nifti import load_ct
-from nv_reason_ct_mlx.processor_mlx import volume_positions
-from nv_reason_ct_mlx.response import save_response
+from mlx_reason_ct.errors import InvalidInputError, InvalidPromptError, ModelExecutionError
+from mlx_reason_ct.nifti import load_ct
+from mlx_reason_ct.processor_mlx import volume_positions
+from mlx_reason_ct.response import save_response
 
 nib: Any = import_module("nibabel")
 
@@ -106,7 +106,7 @@ def test_thinking_response_separates_reasoning_from_report(tmp_path: Path) -> No
 def test_default_prompt_requests_report_for_region(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch, region: str
 ) -> None:
-    api = import_module("nv_reason_ct_mlx.api")
+    api = import_module("mlx_reason_ct.api")
     seen: dict[str, str] = {}
 
     class StopAfterPrompt(Exception):

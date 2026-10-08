@@ -9,8 +9,8 @@ import numpy as np
 import pytest
 from safetensors.numpy import load_file
 
-from nv_reason_ct_mlx import mlx_weights as weights
-from nv_reason_ct_mlx.errors import InvalidInputError
+from mlx_reason_ct import mlx_weights as weights
+from mlx_reason_ct.errors import InvalidInputError
 
 
 def source_checkpoint(
