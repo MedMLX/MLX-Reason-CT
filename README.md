@@ -53,49 +53,19 @@ For source development, clone [this repository](https://github.com/MedMLX/MLX-Re
 and run `make env`; use
 `uv run mlx-reason-ct` for the commands above.
 
-## MedMLX runner
-
-The package registers `mlx-reason-ct` in the `medmlx.models` entry point group
-with task `generation`, for discovery by `medmlx-mcp`. Importing the package or
-its declaration does not load MLX; runtime readiness is checked separately.
+## Python
 
 ```python
 from mlx_reason_ct.medmlx import run
 
-result = run(
-    image_path="ct.nii.gz",
-    weights_path="models",
-    output_dir="outputs",
-    anatomy_region="chest",
-    max_new_tokens=512,
-)
+result = run(image_path="ct.nii.gz", weights_path="models", output_dir="outputs")
 print(result["outputs"]["report"])
 ```
 
-`weights_path` is the explicit converted bundle root containing
-`mlx/manifest.json`, the FP32 shards, tokenizer and chat template, as produced
-by `mlx-reason-ct download` or `mlx-reason-ct convert`. It is a directory.
-All arguments are keyword-only. Set `prompt` to a CT question,
-`enable_thinking=True` to retain reasoning, or `anatomy_region="abdomen"` for
-an abdominal report. `precision="float32"` remains the default;
-`precision="bfloat16"` selects the source BF16 arithmetic profile and
-`precision="bfloat16_fp32"` selects BF16 weights with FP32 accumulation and
-decoding. These profiles retain the upstream qualification limits described in
-[SOURCE.md](SOURCE.md). Generation remains greedy. Existing output files require
-`overwrite=True`; this guard also applies to the public `generate_report` API.
-The CLI accepts `--overwrite` for the same action and `--precision` for profile selection.
-
-The return value contains `outputs` (`report`, `response`, `run`) as absolute
-POSIX paths and JSON-compatible `details`. Missing or mismatched bundles raise
-`medmlx_core.AssetNotReadyError`; bad inputs raise `InvalidInputError`,
-unavailable dependencies or Metal raise `MissingDependencyError`, and generation
-failures raise `ModelExecutionError`. Empty or truncated responses retain partial
-files and failure metadata, then raise; increase `max_new_tokens` for truncation.
-JSON records carry `schema_version=1`. Reports require human review.
-
-Runner tests cover synthetic input, asset validation and report orchestration.
-The fixed production network has no tiny configurable variant; these tests do
-not qualify learned report generation or clinical performance.
+Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`,
+`precision`, `overwrite`). The model is also discoverable by
+[medmlx-mcp](https://github.com/MedMLX/medmlx-mcp) as `mlx-reason-ct`. Full runner
+contract in [docs/usage.md](docs/usage.md#medmlx-runner).
 
 ## Input and output
 
