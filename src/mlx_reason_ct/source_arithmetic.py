@@ -84,7 +84,7 @@ def _kernel_text() -> dict[str, Any]:
 def _kernel(name: str) -> Any:
     value = _kernel_text()[name]
     return mx.fast.metal_kernel(
-        name="radnn_nv_reason_source_" + name,
+        name="nv_reason_source_" + name,
         input_names=value["inputs"],
         output_names=value["outputs"],
         header=value["header"],

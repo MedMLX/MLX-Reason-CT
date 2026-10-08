@@ -113,7 +113,7 @@ import importlib.abc
 import sys
 class BlockMlx(importlib.abc.MetaPathFinder):
     def find_spec(self, fullname, path=None, target=None):
-        if fullname.split('.')[0] in {'mlx', 'torch', 'monai', 'radnn'}:
+        if fullname.split('.')[0] in {'mlx', 'torch', 'monai'}:
             raise ImportError('blocked dependency: ' + fullname)
 sys.meta_path.insert(0, BlockMlx())
 import mlx_reason_ct
@@ -133,7 +133,7 @@ except AttributeError:
 else:
     raise AssertionError('unknown name was accepted')
 loaded = {name.split('.')[0] for name in sys.modules}
-assert not loaded & {'mlx', 'torch', 'monai', 'radnn'}, loaded
+assert not loaded & {'mlx', 'torch', 'monai'}, loaded
 """
     subprocess.run([sys.executable, "-c", code], check=True, capture_output=True, text=True)
 
