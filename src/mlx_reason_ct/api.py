@@ -5,7 +5,7 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from time import perf_counter
-from typing import Any
+from typing import Any, cast
 
 from mlx_reason_ct.errors import InvalidInputError, ModelExecutionError
 from mlx_reason_ct.mlx_weights import read_manifest
@@ -82,13 +82,16 @@ def generate_report(
         raise InvalidInputError("anatomy_region must be chest or abdomen")
     if prompt is None:
         prompt = f"write a structured {anatomy_region} CT report"
+    # Annotations do not bind callers, so validate the runtime values.
+    token_limit = cast(object, max_new_tokens)
     if (
-        isinstance(max_new_tokens, bool)
-        or not isinstance(max_new_tokens, int)
-        or not (1 <= max_new_tokens <= 8192)
+        isinstance(token_limit, bool)
+        or not isinstance(token_limit, int)
+        or not (1 <= token_limit <= 8192)
     ):
         raise InvalidInputError("max_new_tokens must be an integer from 1 to 8192")
-    if not isinstance(prompt, str) or not prompt.strip():
+    prompt_text = cast(object, prompt)
+    if not isinstance(prompt_text, str) or not prompt_text.strip():
         raise InvalidInputError("prompt must be nonempty text")
     model_dir, output_dir = Path(model_dir), Path(output_dir)
     manifest = read_manifest(model_dir)
@@ -115,7 +118,7 @@ def generate_report(
         }
     )
     output_dir.mkdir(parents=True, exist_ok=True)
-    result = {
+    result: dict[str, object] = {
         "schema": "nv_reason_ct_mlx.run.v1",
         "status": "succeeded",
         "source": str(Path(source)),

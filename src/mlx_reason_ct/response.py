@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Mapping
 from pathlib import Path
 
 from mlx_reason_ct.errors import ModelExecutionError
@@ -23,7 +24,7 @@ def split_thinking(response: str) -> tuple[str | None, str]:
     return reasoning.strip(), answer.strip()
 
 
-def save_response(output_dir: Path, response: str, metrics: dict[str, object]) -> dict[str, str]:
+def save_response(output_dir: Path, response: str, metrics: Mapping[str, object]) -> dict[str, str]:
     report_path = output_dir / "report.txt"
     response_path = output_dir / "model_response.json"
     thinking, report = split_thinking(response)

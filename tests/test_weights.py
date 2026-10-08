@@ -3,14 +3,17 @@
 import hashlib
 import json
 import struct
+from importlib import import_module
 from pathlib import Path
+from typing import Any
 
 import numpy as np
 import pytest
-from safetensors.numpy import load_file
 
 from mlx_reason_ct import mlx_weights as weights
 from mlx_reason_ct.errors import InvalidInputError
+
+safetensors_numpy: Any = import_module("safetensors.numpy")
 
 
 def source_checkpoint(
@@ -80,7 +83,7 @@ def test_conversion_preserves_bits_and_portable_bundle(
     assert manifest["dtype"] == "float32"
     assert len(manifest["shards"]) == 35
     for filename in manifest["shards"]:
-        arrays = load_file(bundle / "mlx" / filename)
+        arrays = safetensors_numpy.load_file(bundle / "mlx" / filename)
         for values in arrays.values():
             np.testing.assert_array_equal(values, np.array([1.0, -2.5], dtype=np.float32))
     assert manifest["excluded_source_tensors"] == ["lm_head.weight"]

@@ -42,8 +42,8 @@ class NativeModel:
     """Pinned 3D network with bounded attention and feed-forward workspaces."""
 
     def __init__(self, model_dir: Path) -> None:
-        self.dtype = mx.float32
-        self.config = json.loads((model_dir / "config.json").read_text())
+        self.dtype: Any = mx.float32
+        self.config: dict[str, Any] = json.loads((model_dir / "config.json").read_text())
         self.weights: dict[str, Any] = {}
         for name in SHARDS:
             self.weights.update(mx.load(str(model_dir / "mlx" / name)))
@@ -53,16 +53,16 @@ class NativeModel:
             self.weights[name] = value.astype(self.dtype)
         mx.eval(*self.weights.values())
         self.delta = gated_delta
-        self.eos_ids = tuple(
+        self.eos_ids: tuple[int, ...] = tuple(
             json.loads((model_dir / "generation_config.json").read_text())["eos_token_id"]
         )
         coords = np.indices((24, 24, 24), dtype=np.float32).reshape(3, -1).T
         inv = 1 / np.power(np.float32(10000), np.arange(12, dtype=np.float32) / 12)
         phase = (coords[..., None] * inv).reshape(13824, 36).repeat(2, axis=-1)
-        self.vision_sin = mx.array(np.sin(phase))
-        self.vision_cos = mx.array(np.cos(phase))
+        self.vision_sin: Any = mx.array(np.sin(phase))
+        self.vision_cos: Any = mx.array(np.cos(phase))
         # These constants are built on CPU: Metal pow differs at six frequencies.
-        self.text_inv_freq = mx.array(
+        self.text_inv_freq: Any = mx.array(
             1 / np.power(np.float32(10000000), np.arange(0, 64, 2, dtype=np.float32) / 64)
         )
 

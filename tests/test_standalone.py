@@ -123,7 +123,10 @@ def test_default_prompt_requests_report_for_region(
             seen["prompt"] = question
             raise StopAfterPrompt
 
-    monkeypatch.setattr(api, "read_manifest", lambda model_dir: {})
+    def read_manifest(model_dir: Path) -> dict[str, str]:
+        return {}
+
+    monkeypatch.setattr(api, "read_manifest", read_manifest)
     monkeypatch.setattr(api, "Processor", FakeProcessor)
     with pytest.raises(StopAfterPrompt):
         api.generate_report("ct.nii.gz", tmp_path, model_dir=tmp_path, anatomy_region=region)

@@ -48,9 +48,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
 include = ["src", "tests"]
-exclude = ["src/mlx_reason_ct/gated_delta.py"]
 pythonVersion = "3.12"
-typeCheckingMode = "basic"
+typeCheckingMode = "strict"
 venvPath = "."
 venv = ".venv"
 
