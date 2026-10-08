@@ -14,7 +14,7 @@ authors = [{name = "Joseph Sandoval"}]
 classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
-  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@v0.1.0",
+  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@v0.1.1",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",

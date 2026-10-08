@@ -167,8 +167,8 @@ wheels = [
 
 [[package]]
 name = "medmlx-core"
-version = "0.1.0"
-source = { git = "https://github.com/MedMLX/medmlx-core.git?rev=v0.1.0#938e4109d0fab95833f170870db6c212e0ba4623" }
+version = "0.1.1"
+source = { git = "https://github.com/MedMLX/medmlx-core.git?rev=v0.1.1#858ad1009af4fba24faa4d430338acc5ede3e70f" }
 dependencies = [
     { name = "mlx" },
     { name = "numpy" },
@@ -224,7 +224,7 @@ dev = [
 requires-dist = [
     { name = "huggingface-hub", specifier = "==1.23.0" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "medmlx-core", git = "https://github.com/MedMLX/medmlx-core.git?rev=v0.1.0" },
+    { name = "medmlx-core", git = "https://github.com/MedMLX/medmlx-core.git?rev=v0.1.1" },
     { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.3" },
     { name = "nibabel", specifier = "==5.4.2" },
     { name = "numpy", specifier = "==2.3.5" },
