@@ -15,7 +15,7 @@ from typing import Any, cast, get_type_hints
 
 import numpy as np
 import pytest
-from medmlx_core.errors import (  # pyright: ignore[reportMissingTypeStubs]
+from medmlx_core.errors import (
     AssetNotReadyError,
     InvalidInputError,
     MissingDependencyError,
@@ -226,7 +226,7 @@ def test_generation_controls(
 
 
 def test_runtime_uses_core_and_preserves_metal_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
-    from medmlx_core import runtime as core_runtime  # pyright: ignore[reportMissingTypeStubs]
+    from medmlx_core import runtime as core_runtime
 
     from mlx_reason_ct import runtime
 
@@ -245,7 +245,7 @@ def test_runtime_uses_core_and_preserves_metal_requirement(monkeypatch: pytest.M
 def test_runtime_load_failure_is_typed(
     monkeypatch: pytest.MonkeyPatch, error: ImportError | OSError
 ) -> None:
-    from medmlx_core import runtime as core_runtime  # pyright: ignore[reportMissingTypeStubs]
+    from medmlx_core import runtime as core_runtime
 
     from mlx_reason_ct import runtime
 

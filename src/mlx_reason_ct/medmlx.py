@@ -6,7 +6,7 @@ from os import PathLike
 from pathlib import Path
 from typing import cast
 
-from medmlx_core.errors import (  # pyright: ignore[reportMissingTypeStubs]
+from medmlx_core.errors import (
     AssetNotReadyError,
     InvalidInputError,
     MissingDependencyError,

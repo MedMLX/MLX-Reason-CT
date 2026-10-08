@@ -60,16 +60,21 @@ line-length = 100
 extend-exclude = ["src/mlx_reason_ct/gated_delta.py"]
 
 [tool.ruff.lint]
+extend-select = ["TID251", "ANN401"]
 select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
-include = ["src", "tests"]
-# The adapted vendored Metal kernels expose their types through gated_delta.pyi.
-exclude = ["src/mlx_reason_ct/gated_delta.py"]
+include = ["scripts","src","tests"]
+extraPaths = ["src"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
-venvPath = "."
-venv = ".venv"
+enableTypeIgnoreComments = false
+reportUnnecessaryTypeIgnoreComment = "error"
+
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-tidy-imports.banned-api]
+"typing.Any" = {msg = "Use a precise type and parse untyped values at the boundary."}
+"typing_extensions.Any" = {msg = "Use a precise type and parse untyped values at the boundary."}

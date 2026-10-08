@@ -13,7 +13,7 @@ def import_mlx() -> Any:
             "NV-Reason-CT inference requires macOS on Apple Silicon with Metal",
             hint="Run on an Apple Silicon Mac with GPU access; install mlx-reason-ct.",
         )
-    from medmlx_core.runtime import (  # pyright: ignore[reportMissingTypeStubs]
+    from medmlx_core.runtime import (
         import_mlx as shared_import_mlx,
     )
 
