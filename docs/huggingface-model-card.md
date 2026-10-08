@@ -25,8 +25,8 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 
 MLX port by **Joseph Sandoval**.
 [PyPI](https://pypi.org/project/mlx-reason-ct/) ·
-[GitHub release](https://github.com/sandovaljoseph/MLX-Reason-CT/releases/tag/v0.1.0) ·
-[Usage](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md)
+[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.1.1) ·
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md)
 
 **Requires the companion `mlx-reason-ct` runtime.** Generic `mlx-vlm` and
 `mlx-lm` examples do not support this 3D CT model.
@@ -65,7 +65,7 @@ mlx-reason-ct report \
 To ask a question about the CT, set `--prompt` to your question.
 
 For an existing Python 3.12 environment, install with `pip install mlx-reason-ct`.
-For source development, clone [the repository](https://github.com/sandovaljoseph/MLX-Reason-CT)
+For source development, clone [the repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use `uv run mlx-reason-ct` for the commands above.
 
 ## Input and output
@@ -87,7 +87,7 @@ Each run writes:
 
 This release uses FP32 inference with weights converted directly from the
 original BF16 checkpoint, without retraining.
-[Implementation and verification details](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md),
+[Implementation and verification details](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md),
 including token-exact parity with the CUDA source model on real CT, are in the companion repository.
 [Upstream model card and limitations](https://huggingface.co/josand/MLX-Reason-CT/blob/main/upstream_model_card.md).
 
@@ -102,6 +102,6 @@ Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LIC
 Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES.
 Underlying Qwen3.5 terms: [Apache-2.0](https://huggingface.co/josand/MLX-Reason-CT/blob/main/APACHE-2.0.txt).
 
-Port code: [Apache-2.0](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/LICENSE),
+Port code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE),
 Copyright (c) 2026 Joseph Sandoval.
-[Third-party notices](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
+[Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).

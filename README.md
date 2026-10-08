@@ -11,7 +11,7 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 MLX port by **Joseph Sandoval**.
 [PyPI](https://pypi.org/project/mlx-reason-ct/) ·
 [Weights](https://huggingface.co/josand/MLX-Reason-CT) ·
-[Usage](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md)
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md)
 
 ## Requirements
 
@@ -47,7 +47,7 @@ mlx-reason-ct report \
 To ask a question about the CT, set `--prompt` to your question.
 
 For an existing Python 3.12 environment, install with `pip install mlx-reason-ct`.
-For source development, clone [this repository](https://github.com/sandovaljoseph/MLX-Reason-CT)
+For source development, clone [this repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use
 `uv run mlx-reason-ct` for the commands above.
 
@@ -71,7 +71,7 @@ Each run writes:
 This release uses FP32 inference with weights converted directly from the
 original BF16 checkpoint, without retraining. Implementation and verification
 details, including token-exact parity with the CUDA source model on real CT, are in
-[docs](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md).
+[docs](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md).
 
 ## Intended use
 
@@ -80,6 +80,6 @@ Outputs require human review.
 
 ## License
 
-Code: [Apache-2.0](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/LICENSE), Joseph Sandoval.
+Code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE), Joseph Sandoval.
 Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LICENSE), NVIDIA CORPORATION & AFFILIATES.
-[Third-party notices](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
+[Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).

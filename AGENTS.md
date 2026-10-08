@@ -1,7 +1,7 @@
 # MLX-Reason-CT
 
 - Project: MLX-Reason-CT; package/CLI: `mlx-reason-ct`.
-- Repository: `sandovaljoseph/MLX-Reason-CT`; public code repository; retain separate model-material licensing.
+- Repository: `MedMLX/MLX-Reason-CT`; public code repository; retain separate model-material licensing.
 - Preset: base. Python 3.12; pinned dependencies in `pyproject.toml` and `uv.lock`.
 - Inference: macOS Apple Silicon Metal only, FP32 only. CPU preprocessing,
   conversion and bundle verification are portable. No runtime fallback.
