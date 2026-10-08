@@ -39,7 +39,7 @@ Issues = "https://github.com/MedMLX/MLX-Reason-CT/issues"
 Weights = "https://huggingface.co/josand/MLX-Reason-CT"
 
 [dependency-groups]
-dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright[nodejs]==1.1.411"]
+dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright[nodejs]==1.1.414"]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mlx_reason_ct"]
