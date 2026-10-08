@@ -18,6 +18,9 @@ MLX port by **Joseph Sandoval**.
 Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
 Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
 Metal is unavailable.
+
+`v0.2.2` uses the public Apache-2.0 `medmlx-core@v0.1.2` runtime.
+
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
 
@@ -25,7 +28,7 @@ allow additional unified memory for preprocessing, macOS and other apps.
 
 ```bash
 uv tool install --python 3.12 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.1/mlx_reason_ct-0.2.1-py3-none-any.whl
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.2/mlx_reason_ct-0.2.2-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \

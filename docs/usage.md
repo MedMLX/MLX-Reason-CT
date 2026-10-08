@@ -13,7 +13,7 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
-The examples below use `mlx-reason-ct` 0.2.1, which includes the MedMLX runner,
+The examples below use `mlx-reason-ct` 0.2.2, which includes the MedMLX runner,
 explicit precision profiles and overwrite controls.
 
 ```python
