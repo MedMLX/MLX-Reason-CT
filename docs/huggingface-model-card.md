@@ -24,7 +24,8 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - FP32 inference using MLX; no PyTorch or CUDA required
 
 MLX port by **Joseph Sandoval**.
-[GitHub](https://github.com/sandovaljoseph/MLX-Reason-CT) ·
+[PyPI](https://pypi.org/project/mlx-reason-ct/) ·
+[GitHub release](https://github.com/sandovaljoseph/MLX-Reason-CT/releases/tag/v0.1.0) ·
 [Usage](https://github.com/sandovaljoseph/MLX-Reason-CT/blob/main/docs/usage.md)
 
 **Requires the companion `mlx-reason-ct` runtime.** Generic `mlx-vlm` and
@@ -39,11 +40,9 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-git clone https://github.com/sandovaljoseph/MLX-Reason-CT.git
-cd MLX-Reason-CT
-make env
+uv tool install --python 3.12 mlx-reason-ct
 
-uv run mlx-reason-ct download \
+mlx-reason-ct download \
   --revision e15558ae30c8ad6c25c0bfcce7467cc72cd0b2f2 \
   --model-dir models
 ```
@@ -51,19 +50,23 @@ uv run mlx-reason-ct download \
 Generate a chest CT report:
 
 ```bash
-uv run mlx-reason-ct report \
+mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs
 ```
 
 For abdomen CT:
 
 ```bash
-uv run mlx-reason-ct report \
+mlx-reason-ct report \
   --input ct.nii.gz --model-dir models --output-dir outputs \
   --anatomy-region abdomen
 ```
 
 To ask a question about the CT, set `--prompt` to your question.
+
+For an existing Python 3.12 environment, install with `pip install mlx-reason-ct`.
+For source development, clone [the repository](https://github.com/sandovaljoseph/MLX-Reason-CT)
+and run `make env`; use `uv run mlx-reason-ct` for the commands above.
 
 ## Input and output
 
