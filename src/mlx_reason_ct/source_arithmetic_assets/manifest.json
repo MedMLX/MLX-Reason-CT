@@ -1,0 +1,54 @@
+{
+  "source_revision": "386b93e034983f6c1fc841a43833a1b6a0cd9c13",
+  "source_torch_git": "cf30153c4c131c8164ee7798e5022d810682e2cb",
+  "source_hardware": "NVIDIA GeForce RTX4090",
+  "mlx": "0.32.2",
+  "kernels_sha256": "46106d8492b0bb34e233dc0eab17d0df2210d949b1a8f4f96ad2479dbdaf3f34",
+  "tables": {
+    "rsqrt": {
+      "file": "rsqrt.ruc",
+      "sha256": "823aa998450fbf4105b694fbdcde5f18ce66d976d3c4cefbbce69665a79b393d",
+      "source_npy_sha256": "e03e8831e5e26fa54f9d763f9033f5013c6049ea4f3eacb90f4a810dbcefc7ed"
+    },
+    "exp2_positive": {
+      "file": "exp2_positive.ruc",
+      "sha256": "0ba737ca8e874449db792f8cf267d9716948e0cff5d149c86f37652c3990d443",
+      "source_npy_sha256": "7bef639b045fa66202887b53858c2763038e20a219df7e916624fc059e4cde27"
+    },
+    "exp2_negative": {
+      "file": "exp2_negative.ruc",
+      "sha256": "8c75f9ce38f97fd8e2d5cf6a64dfcfe6d1a34c1bd721f756ac21f02d7ae2f119",
+      "source_npy_sha256": "fb71b2ac9607a5bb37a7fd46428ebcc46480e03cc31f1d5409cfb4d10094f5d1"
+    },
+    "exp2_negative_direct": {
+      "file": "exp2_negative_direct.ruc",
+      "sha256": "197d4852f8754614f3b7168b4a8904aa46eaa56ba4f06b87d79d20d023972954",
+      "source_npy_sha256": "df0b5e60e45d5475ae8ec48e88a1e009595e3d6dba4c7307d649257d6807d8b0"
+    },
+    "lg2": {
+      "file": "lg2.ruc",
+      "sha256": "c176bbf104b227df830bbb797d2f06d613335e9ae4e603840bdf60ec21d8e484",
+      "source_npy_sha256": "1f50b835e2055d0423c526a616c6d7ef3f18f854c3c778b20297c9f21343016c"
+    },
+    "vision_rotary": {
+      "file": "vision_rotary.ruc",
+      "sha256": "e51a9285462defa36d09f7c843be29b3c88a43ae60b405105f7cc0f0f3a3a4d7",
+      "source_npy_sha256": "2acae5890c8f756b7bd37e903cadc04ecf54a0aef4b35e0f9112bcc622724bd2"
+    },
+    "silu_fp32": {
+      "file": "silu_fp32.ruc",
+      "sha256": "b4e67af34d78b632d0264a1bab1a7d934ee87d16186dedd196cd3c1668b34d10",
+      "source_npy_sha256": "99d60ba210b9bf8739b35e66091a8ed93308bbc090f9a16ea346c0da6039e08a"
+    },
+    "silu_bf16": {
+      "file": "silu_bf16.ruc",
+      "sha256": "27700c0ab15bb9930f90a492f38c923a74a5f9663daa1977166a90420a9cb136",
+      "source_npy_sha256": "e8d9c25a7481c9e1bf57c2babdfbf00ed7592ae2d73abb67107cdf2f21a659ef"
+    },
+    "sigmoid_bf16": {
+      "file": "sigmoid_bf16.ruc",
+      "sha256": "5764775feebe0ac770fecc69c25d14e50029d4d99f22b25f0090e22b58580a62",
+      "source_npy_sha256": "ef86b782904472193c45d006ab1d40ac5ff0a36099906cc6ba8f72ea73f974ba"
+    }
+  }
+}

@@ -216,3 +216,5 @@ POSSIBILITY OF SUCH DAMAGE.
 ```
 
 </details>
+
+Source BF16 arithmetic kernels retain the FlashAttention BSD license (submodule 6c4f74fb338e0c3cdb07ac6f5eab5f54fc367c15) and MLX 0.32.2 MIT fragment/layout notices. Their complete licenses are packaged in `mlx_reason_ct/licenses/`. `SOURCE.md` records the pinned arithmetic and table provenance.

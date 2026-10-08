@@ -47,9 +47,13 @@ def chunk_delta(
     g: Any,
     beta: Any,
     state: Any,
+    *,
+    source_bfloat16: bool = False,
 ) -> tuple[Any, Any]:
     """Consume normalized/scaled Q/K and log decay; state uses MLX-LM's V,K order."""
-    exponential = mx.exp
+    from mlx_reason_ct import source_arithmetic
+
+    exponential = source_arithmetic.exp if source_bfloat16 else mx.exp
     batch, length, heads, _ = v.shape
     count = (length + 63) // 64
     padding = count * 64 - length
@@ -72,7 +76,9 @@ def chunk_delta(
     for i in range(1, 64):
         row = attn[..., i, :i]
         product = row[..., :, None] * attn[..., :i, :i]
-        update = row + (mx.sum(product, axis=-2))
+        update = row + (
+            source_arithmetic.sum_product(product) if source_bfloat16 else mx.sum(product, axis=-2)
+        )
         attn[..., i, :i] = update
         mx.eval(attn)
     attn = attn + mx.eye(64)

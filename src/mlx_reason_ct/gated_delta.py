@@ -2,10 +2,10 @@
 
 import os
 from functools import partial
-from collections.abc import Sequence
-from typing import Optional, Protocol, Tuple, cast
+from typing import Optional, Tuple
 
 import mlx.core as mx
+import mlx.nn as nn
 
 # For the shapes it supports, the packed kernel is bitwise-identical by
 # construction to an explicit-tree comparator kernel that the tests pin it
@@ -15,31 +15,13 @@ import mlx.core as mx
 _ENABLE_GDN_PACKED = os.environ.get("MLX_GDN_PACKED", "1") != "0"
 
 
-class _MetalKernel(Protocol):
-    """Call signature of the object returned by ``mx.fast.metal_kernel``."""
-
-    def __call__(
-        self,
-        *,
-        inputs: Sequence[mx.array | int],
-        template: Sequence[tuple[str, mx.Dtype | int]],
-        grid: tuple[int, int, int],
-        threadgroup: tuple[int, int, int],
-        output_shapes: Sequence[Sequence[int]],
-        output_dtypes: Sequence[mx.Dtype],
-    ) -> list[mx.array]: ...
+@partial(mx.compile, shapeless=True)
+def compute_g(A_log, a, dt_bias):
+    return mx.exp(-mx.exp(A_log.astype(mx.float32)) * nn.softplus(a + dt_bias))
 
 
 @partial(mx.compile, shapeless=True)
-def compute_g(A_log: mx.array, a: mx.array, dt_bias: mx.array) -> mx.array:
-    # softplus(x) == logaddexp(x, 0), as in mlx.nn.softplus.
-    return mx.exp(-mx.exp(A_log.astype(mx.float32)) * mx.logaddexp(a + dt_bias, 0))
-
-
-@partial(mx.compile, shapeless=True)
-def compute_lower_bound_g(
-    A_log: mx.array, a: mx.array, dt_bias: mx.array, lower_bound: float
-) -> mx.array:
+def compute_lower_bound_g(A_log, a, dt_bias, lower_bound):
     return mx.exp(
         lower_bound
         * mx.sigmoid(
@@ -62,9 +44,7 @@ def normalize_qk(
     return q, k
 
 
-def _make_gated_delta_kernel(
-    has_mask: bool = False, vectorized: bool = False
-) -> Optional[_MetalKernel]:
+def _make_gated_delta_kernel(has_mask=False, vectorized=False):
     if not mx.metal.is_available():
         return None
     mask_source = "mask[b_idx * T + t]" if has_mask else "true"
@@ -161,16 +141,15 @@ def _make_gated_delta_kernel(
     if has_mask:
         suffix += "_mask"
 
-    kernel = mx.fast.metal_kernel(
+    return mx.fast.metal_kernel(
         name=f"gated_delta_step{suffix}",
         input_names=inputs,
         output_names=["y", "state_out"],
         source=source,
     )
-    return cast(_MetalKernel, kernel)
 
 
-def _make_gated_delta_kernel_xtree() -> Optional[_MetalKernel]:
+def _make_gated_delta_kernel_xtree():
     """Scalar-gate, unmasked kernel with an explicitly-written reduction.
 
     This is the unpacked comparator for the packed kernel: it replaces the
@@ -257,16 +236,15 @@ def _make_gated_delta_kernel_xtree() -> Optional[_MetalKernel]:
           o_state[s_idx] = static_cast<StT>(state[i]);
         }
     """
-    kernel = mx.fast.metal_kernel(
+    return mx.fast.metal_kernel(
         name="gated_delta_step_xtree",
         input_names=["q", "k", "v", "g", "beta", "state_in", "T"],
         output_names=["y", "state_out"],
         source=source,
     )
-    return cast(_MetalKernel, kernel)
 
 
-def _make_gated_delta_packed_kernel() -> Optional[_MetalKernel]:
+def _make_gated_delta_packed_kernel():
     """Make the scalar-gate Dk=128 prefill specialization.
 
     The generic kernel assigns one 32-lane SIMD-group to each value row. For
@@ -385,13 +363,12 @@ def _make_gated_delta_packed_kernel() -> Optional[_MetalKernel]:
           o_state[i] = static_cast<StT>(state[i]);
         }
     """
-    kernel = mx.fast.metal_kernel(
+    return mx.fast.metal_kernel(
         name="gated_delta_step_packed_btree",
         input_names=["q", "k", "v", "g", "beta", "state_in", "T"],
         output_names=["y", "state_out"],
         source=source,
     )
-    return cast(_MetalKernel, kernel)
 
 
 _gated_delta_kernel = _make_gated_delta_kernel(has_mask=False, vectorized=False)
@@ -500,9 +477,7 @@ def _gated_delta_kernel_impl(
         grid = (32, Dv, B * Hv)
         threadgroup = (32, 4, 1)
 
-    if kernel is None:
-        raise RuntimeError("Gated delta Metal kernels require an available Metal device")
-    y, state_out = kernel(
+    return kernel(
         inputs=inputs,
         template=[
             ("InT", input_type),
@@ -517,7 +492,6 @@ def _gated_delta_kernel_impl(
         output_shapes=[(B, T, Hv, Dv), state.shape],
         output_dtypes=[input_type, state_type],
     )
-    return y, state_out
 
 
 def gated_delta_kernel_xtree(
@@ -536,11 +510,9 @@ def gated_delta_kernel_xtree(
     the simd_sum lowering.
     """
     assert mask is None
-    if _gated_delta_kernel_xtree is None:
-        raise RuntimeError("Gated delta Metal kernels require an available Metal device")
     B, T, Hk, Dk = k.shape
     Hv, Dv = v.shape[2:]
-    y, state_out = _gated_delta_kernel_xtree(
+    return _gated_delta_kernel_xtree(
         inputs=[q, k, v, g, beta, state, T],
         template=[
             ("InT", q.dtype),
@@ -555,7 +527,6 @@ def gated_delta_kernel_xtree(
         output_shapes=[(B, T, Hv, Dv), state.shape],
         output_dtypes=[q.dtype, state.dtype],
     )
-    return y, state_out
 
 
 def gated_delta_kernel_unpacked(
@@ -615,7 +586,7 @@ def gated_delta_ops(
         q = mx.repeat(q, repeat_factor, -2)
         k = mx.repeat(k, repeat_factor, -2)
 
-    ys: list[mx.array] = []
+    ys = []
     for t in range(T):
         y, state = _gated_delta_step_ops(
             q[:, t],
@@ -661,7 +632,7 @@ def gated_delta_update(
     else:
         g = compute_lower_bound_g(A_log, a, dt_bias, lower_bound)
     if state is None:
-        B, _, _, Dk = q.shape
+        B, _, Hk, Dk = q.shape
         Hv, Dv = v.shape[-2:]
         state = mx.zeros((B, Hv, Dv, Dk), dtype=mx.float32)
 

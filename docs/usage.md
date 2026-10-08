@@ -77,3 +77,5 @@ token, with image embeddings and first-step logits within the FP32 tolerances.
 These checks establish no clinical or report accuracy.
 
 See [third-party terms](../THIRD_PARTY_NOTICES.md).
+
+Python callers can select `precision="bfloat16"` for source BF16 arithmetic or `precision="bfloat16_fp32"` for BF16 weights with FP32 arithmetic. The CLI default remains FP32. The native `NativeModel` profiles retain the arithmetic identities used by the qualification fixtures; this does not establish clinical validation.

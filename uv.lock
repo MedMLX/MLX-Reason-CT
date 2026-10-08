@@ -188,30 +188,30 @@ wheels = [
 
 [[package]]
 name = "mlx"
-version = "0.32.2"
+version = "0.32.3"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mlx-metal" },
 ]
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/38/f7/5664e13821491559c953494e6705c818203d6880d713a0c22e12bead9564/mlx-0.32.2-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:77217798a2b036bae9f213b851d4cde4581893787c9964458b7d471f86036bd6", size = 619370, upload-time = "2026-08-25T10:31:44.235Z" },
-    { url = "https://files.pythonhosted.org/packages/bc/be/c821eed5b7c13b42c114aec54c757545d6eeecce25d3212ea7d18dd79cfd/mlx-0.32.2-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:cf63fd5c32258ab07523b06401c20ee2280bf56e26e991d05bf6fd8a4d42d1f6", size = 619376, upload-time = "2026-08-25T10:31:45.647Z" },
-    { url = "https://files.pythonhosted.org/packages/0b/eb/af6b1a8b45f24d22e4735c52e0696c66233bd477e1b9e9dbbef225bdf88b/mlx-0.32.2-cp312-cp312-macosx_26_0_arm64.whl", hash = "sha256:68560fd648c5bb900aa6f6765cd74c5a8abaf092d97d73584a57b7545966c227", size = 619488, upload-time = "2026-08-25T10:31:47.485Z" },
+    { url = "https://files.pythonhosted.org/packages/26/8c/2f8b796885b4c02ab9644916bebf656cd1d6d366df94d174b046903ea250/mlx-0.32.3-cp312-cp312-macosx_14_0_arm64.whl", hash = "sha256:7aecc3d4a904279492dae58e28378a3c4bec4533e7066e64ae5c78c7a5511f22", size = 651041, upload-time = "2026-09-29T00:22:36.481Z" },
+    { url = "https://files.pythonhosted.org/packages/6e/06/aacd94119d4a999d43f07f24b02904d7f895ee074ed4678b28456c319ea3/mlx-0.32.3-cp312-cp312-macosx_15_0_arm64.whl", hash = "sha256:a6241ea8f56a08a6c3a06bbaad7d7fc2fc1c05f23757c61fe0a8797325ac6d46", size = 651042, upload-time = "2026-09-29T00:22:38.071Z" },
+    { url = "https://files.pythonhosted.org/packages/4a/c1/13ff85d72f7cf01239c1031688b11cf1c7a3f0c7380636728976e510bfbd/mlx-0.32.3-cp312-cp312-macosx_26_0_arm64.whl", hash = "sha256:72711cb23cc6dccc5a460f63f39c11931a00b2c6dcd6fba253921090072e21bc", size = 651118, upload-time = "2026-09-29T00:22:39.503Z" },
 ]
 
 [[package]]
 name = "mlx-metal"
-version = "0.32.2"
+version = "0.32.3"
 source = { registry = "https://pypi.org/simple" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/f7/ab/ba1952908c5d2a5070cf1cfbfea0161c4751ea62299e2776819810917483/mlx_metal-0.32.2-py3-none-macosx_14_0_arm64.whl", hash = "sha256:3825fff379dbc107dd3413e564a06caeaa24819910ec49c0439e454c06a1b9b8", size = 42516623, upload-time = "2026-08-25T10:31:18.396Z" },
-    { url = "https://files.pythonhosted.org/packages/79/ec/34f37376e26d537fadffb99af3a760d6545e37f5e1a30a552baadf237fc5/mlx_metal-0.32.2-py3-none-macosx_15_0_arm64.whl", hash = "sha256:55a369250d220b2cf10213a87a2ac1b1a420608c5b35b1df4e7147ac8e32f121", size = 42512323, upload-time = "2026-08-25T10:31:22.673Z" },
-    { url = "https://files.pythonhosted.org/packages/dd/cd/4e50bf325100e7165e13d025f264362bf0009196269f9eaf87f2c6e738a2/mlx_metal-0.32.2-py3-none-macosx_26_0_arm64.whl", hash = "sha256:e6abeac9ac5265830c9c1541b6f96e9be37a85c2446763a46ad466c63a3837ab", size = 64367860, upload-time = "2026-08-25T10:31:28.056Z" },
+    { url = "https://files.pythonhosted.org/packages/f8/ed/8510985bcb24a6eae359a5441ce4cedcee13b84258a010cd0e515e9fb0bc/mlx_metal-0.32.3-py3-none-macosx_14_0_arm64.whl", hash = "sha256:fdba88ed9131448cf163be2c7ad6374746d8818205f28657aa91b6c69050f691", size = 42205858, upload-time = "2026-09-29T00:14:27.819Z" },
+    { url = "https://files.pythonhosted.org/packages/3c/dc/4f852295fbe357bb9d3a2bfd55361a520b94ded873b72dc58b34a7f507cd/mlx_metal-0.32.3-py3-none-macosx_15_0_arm64.whl", hash = "sha256:feea99fe4d01f9e9f33ca73d869f988219a1725de1c18870baa7d5cd5aef6cb3", size = 42187333, upload-time = "2026-09-29T00:14:33.861Z" },
+    { url = "https://files.pythonhosted.org/packages/ee/38/cb985ca86979ca6f954a2a45eb6e3f9b787c5d55227564a04f87953b3d56/mlx_metal-0.32.3-py3-none-macosx_26_0_arm64.whl", hash = "sha256:34ae9b83ad2f0ccdd3e5d48ec35176e7119f57069eef187122916dc941a4ae1f", size = 67661845, upload-time = "2026-09-29T00:14:41.248Z" },
 ]
 
 [[package]]
 name = "mlx-reason-ct"
-version = "0.1.1"
+version = "0.2.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -235,7 +235,7 @@ dev = [
 requires-dist = [
     { name = "huggingface-hub", specifier = "==1.23.0" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.2" },
+    { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.3" },
     { name = "nibabel", specifier = "==5.4.2" },
     { name = "numpy", specifier = "==2.3.5" },
     { name = "safetensors", specifier = "==0.8.0" },

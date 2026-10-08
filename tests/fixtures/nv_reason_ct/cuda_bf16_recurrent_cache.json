@@ -1,0 +1,21 @@
+{
+  "owner": "transformers.cache_utils.LinearAttentionLayer",
+  "conv_dtype": "torch.bfloat16",
+  "recurrent_input_dtype": "torch.float32",
+  "recurrent_storage_dtype": "torch.bfloat16",
+  "input_values": [
+    1.00390625,
+    1.01171875,
+    -1.00390625,
+    -1.01171875
+  ],
+  "stored_values": [
+    1.0,
+    1.015625,
+    -1.0,
+    -1.015625
+  ],
+  "transformers_version": "5.10.4",
+  "source_revision": "386b93e034983f6c1fc841a43833a1b6a0cd9c13",
+  "capture_command": "python build/nv-reason-ct/bf16-diagnosis/minimal_source_probe.py --root ."
+}

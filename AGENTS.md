@@ -3,7 +3,7 @@
 - Project: MLX-Reason-CT; package/CLI: `mlx-reason-ct`.
 - Repository: `MedMLX/MLX-Reason-CT`; public code repository; retain separate model-material licensing.
 - Preset: base. Python 3.12; pinned dependencies in `pyproject.toml` and `uv.lock`.
-- Inference: macOS Apple Silicon Metal only, FP32 only. CPU preprocessing,
+- Inference: macOS Apple Silicon Metal only, FP32 by default; explicit BF16 arithmetic profiles retain the pinned source boundaries. CPU preprocessing,
   conversion and bundle verification are portable. No runtime fallback.
 - Port additions: Apache-2.0, Copyright (c) 2026 Joseph Sandoval.
   Preserve upstream OpenMDW-1.1, Apache-2.0, MIT and BSD notices.

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mlx-reason-ct"
-version = "0.1.1"
+version = "0.2.0"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -20,7 +20,7 @@ dependencies = [
   "jinja2==3.1.6",
   "safetensors==0.8.0",
   "huggingface-hub==1.23.0",
-  "mlx==0.32.2; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "mlx==0.32.3; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 
 [project.scripts]
@@ -39,6 +39,9 @@ dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright[nodejs]==1.1.411"]
 [tool.hatch.build.targets.wheel]
 packages = ["src/mlx_reason_ct"]
 
+[tool.hatch.build.targets.wheel.force-include]
+"SOURCE.md" = "mlx_reason_ct/SOURCE.md"
+
 [tool.ruff]
 target-version = "py312"
 line-length = 100
@@ -49,6 +52,8 @@ select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
 include = ["src", "tests"]
+# Preserve the pinned vendored bytes; gated_delta.pyi provides its public types.
+exclude = ["src/mlx_reason_ct/gated_delta.py"]
 pythonVersion = "3.12"
 typeCheckingMode = "strict"
 venvPath = "."

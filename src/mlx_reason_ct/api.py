@@ -73,11 +73,14 @@ def generate_report(
     anatomy_region: str = "chest",
     enable_thinking: bool = False,
     max_new_tokens: int = 512,
+    precision: str = "float32",
 ) -> dict[str, object]:
     """Run one HU NIfTI CT locally on Metal; retain partial output on truncation.
 
     Without a prompt, a structured report for ``anatomy_region`` is requested.
     """
+    if precision not in {"float32", "bfloat16", "bfloat16_fp32"}:
+        raise InvalidInputError("Unsupported NV-Reason-CT MLX precision profile")
     if anatomy_region not in {"chest", "abdomen"}:
         raise InvalidInputError("anatomy_region must be chest or abdomen")
     if prompt is None:
@@ -103,7 +106,12 @@ def generate_report(
 
     started = perf_counter()
     mx.reset_peak_memory()
-    model = NativeModel(model_dir)
+    native_profile = {
+        "float32": "float32",
+        "bfloat16": "source_bfloat16",
+        "bfloat16_fp32": "bfloat16",
+    }[precision]
+    model = NativeModel(model_dir, precision=native_profile)
     features, embeddings = model.vision(mx.array(pixels))
     if not bool(mx.all(mx.isfinite(embeddings)).item()):
         raise ModelExecutionError("NV-Reason-CT produced nonfinite image embeddings")
@@ -113,7 +121,10 @@ def generate_report(
         {
             "elapsed_s": round(perf_counter() - started, 4),
             "peak_mlx_memory_bytes": int(mx.get_peak_memory()),
-            "precision": "float32",
+            "precision": precision,
+            "learned_weight_dtype": str(model.dtype),
+            "decoder_arithmetic": "bfloat16" if precision == "bfloat16" else "float32",
+            "native_arithmetic_profile": native_profile,
             "synchronization": "mx.eval per layer/token and mx.synchronize",
         }
     )
@@ -124,6 +135,7 @@ def generate_report(
         "source": str(Path(source)),
         "model_revision": manifest["revision"],
         "bundle_engine": manifest["engine"],
+        "source_sha256": manifest["source_sha256"],
         "generation": metrics,
         "ct_geometry": crop.geometry(),
         "generated_token_ids": tokens,

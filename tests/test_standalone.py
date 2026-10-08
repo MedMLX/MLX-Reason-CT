@@ -63,6 +63,21 @@ def test_volume_prompt_positions_and_single_marker_guard() -> None:
     with pytest.raises(InvalidPromptError, match="exactly one"):
         volume_positions(np.array([10, 99, 11, 99, 99, 99]), 99, (1, 2, 2))
 
+    positions, delta, start = volume_positions(
+        np.array([7, 8, *([99] * 8), 9, 10, 11]), 99, (2, 2, 2)
+    )
+    expected = np.array(
+        [
+            [0, 1, 2, 2, 2, 2, 3, 3, 3, 3, 4, 5, 6],
+            [0, 1, 2, 2, 3, 3, 2, 2, 3, 3, 4, 5, 6],
+            [0, 1, 2, 3, 2, 3, 2, 3, 2, 3, 4, 5, 6],
+        ]
+    )
+    np.testing.assert_array_equal(positions[:, 0], expected)
+    assert (delta, start) == (-6, 2)
+    with pytest.raises(InvalidPromptError, match="exactly one"):
+        volume_positions(np.array([7, *([99] * 4), 8, *([99] * 4)]), 99, (2, 2, 2))
+
 
 @pytest.mark.parametrize(
     "report,complete", [("Draft report", True), ("Partial", False), ("", True)]

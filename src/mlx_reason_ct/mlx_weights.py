@@ -152,7 +152,8 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
         for name in RUNTIME_FILES:
             target = output_dir / name
             target.parent.mkdir(parents=True, exist_ok=True)
-            shutil.copyfile(model_dir / name, target)
+            if (model_dir / name).resolve() != target.resolve():
+                shutil.copyfile(model_dir / name, target)
         # Publish the manifest last so it never marks a partially written conversion complete.
         (destination / "manifest.json").unlink(missing_ok=True)
         for name in hashes:
