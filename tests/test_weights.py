@@ -5,15 +5,16 @@ import json
 import struct
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import numpy as np
 import pytest
 
 from mlx_reason_ct import mlx_weights as weights
+from mlx_reason_ct._host_types import Safetensors
 from mlx_reason_ct.errors import InvalidInputError
 
-safetensors_numpy: Any = import_module("safetensors.numpy")
+safetensors_numpy = cast(Safetensors, import_module("safetensors.numpy"))
 
 
 def source_checkpoint(

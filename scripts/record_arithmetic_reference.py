@@ -6,21 +6,24 @@ import argparse
 import json
 import platform
 from pathlib import Path
-from typing import Any
 
 import numpy as np
+from numpy.typing import NDArray
 
-Array = np.ndarray[Any, Any]
+from mlx_reason_ct._payloads import JsonValue
+
+type Array = NDArray[np.float32]
+type FloatInput = NDArray[np.float32] | NDArray[np.float64]
 
 
-def bfloat16(values: Array) -> Array:
+def bfloat16(values: FloatInput) -> Array:
     """Round finite FP32 values to BF16, with ties to even, then widen."""
     bits = values.astype(np.float32).view(np.uint32)
     rounded = (bits + np.uint32(0x7FFF) + ((bits >> 16) & 1)) & np.uint32(0xFFFF0000)
     return rounded.view(np.float32)
 
 
-def layer_norm(rng: np.random.Generator) -> dict[str, Any]:
+def layer_norm(rng: np.random.Generator) -> dict[str, JsonValue]:
     values = bfloat16(rng.normal(size=(1, 2, 864)).astype(np.float32))
     weight = bfloat16(rng.uniform(0.75, 1.25, 864).astype(np.float32))
     bias = bfloat16(rng.uniform(-0.1, 0.1, 864).astype(np.float32))
@@ -38,7 +41,7 @@ def layer_norm(rng: np.random.Generator) -> dict[str, Any]:
     }
 
 
-def activations(rng: np.random.Generator) -> dict[str, Any]:
+def activations(rng: np.random.Generator) -> dict[str, JsonValue]:
     values = bfloat16(np.concatenate([[-8.0, 0.0, 8.0], rng.uniform(-8, 8, 61)]))
     fp = values.astype(np.float64)
     sigmoid = (1 / (1 + np.exp(-fp))).astype(np.float32)
@@ -51,8 +54,8 @@ def activations(rng: np.random.Generator) -> dict[str, Any]:
     }
 
 
-def mean_squares() -> dict[str, Any]:
-    cases: dict[str, Any] = {}
+def mean_squares() -> dict[str, JsonValue]:
+    cases: dict[str, JsonValue] = {}
     for width in (128, 256, 2560):
         for rows in (1, 2, 17):
             seed = 431 + width * 100 + rows
@@ -63,7 +66,7 @@ def mean_squares() -> dict[str, Any]:
     return cases
 
 
-def projections(rng: np.random.Generator) -> dict[str, Any]:
+def projections(rng: np.random.Generator) -> dict[str, JsonValue]:
     values = rng.normal(0, 0.3, (1, 2, 32)).astype(np.float32)
     weight = bfloat16(rng.normal(0, 0.3, (8, 32)).astype(np.float32))
     bias = bfloat16(rng.normal(0, 0.1, 8).astype(np.float32))
@@ -83,8 +86,8 @@ def projections(rng: np.random.Generator) -> dict[str, Any]:
     }
 
 
-def cache_normalization(rng: np.random.Generator) -> dict[str, Any]:
-    references: dict[str, Any] = {}
+def cache_normalization(rng: np.random.Generator) -> dict[str, JsonValue]:
+    references: dict[str, JsonValue] = {}
     for kind in ("query", "key"):
         values = bfloat16(rng.normal(0, 0.3, 128).astype(np.float32))
         fp = values.astype(np.float64)
@@ -106,7 +109,7 @@ def cache_normalization(rng: np.random.Generator) -> dict[str, Any]:
     return references
 
 
-def record() -> dict[str, Any]:
+def record() -> dict[str, JsonValue]:
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         raise RuntimeError("Record test references on macOS arm64 only")
     rng = np.random.Generator(np.random.PCG64(431))

@@ -10,8 +10,8 @@ import sys
 from importlib import import_module
 from importlib.metadata import distribution
 from pathlib import Path
-from types import SimpleNamespace
-from typing import Any, cast, get_type_hints
+from types import ModuleType, SimpleNamespace
+from typing import TypedDict, cast, get_type_hints
 
 import numpy as np
 import pytest
@@ -24,12 +24,21 @@ from medmlx_core.errors import (
 from test_weights import source_checkpoint
 
 from mlx_reason_ct import api, mlx_weights
+from mlx_reason_ct._host_types import HostArray, Nibabel, Tokenizers
 from mlx_reason_ct.errors import InvalidPromptError
 from mlx_reason_ct.medmlx import MODEL, readiness, run
 from mlx_reason_ct.processor_mlx import VolumePrompt
 
-nib: Any = import_module("nibabel")
-tokenizers: Any = import_module("tokenizers")
+nib = cast(Nibabel, import_module("nibabel"))
+tokenizers = cast(Tokenizers, import_module("tokenizers"))
+
+
+class GenerationControls(TypedDict, total=False):
+    prompt: str
+    anatomy_region: str
+    enable_thinking: bool
+    max_new_tokens: int
+    precision: str
 
 
 @pytest.fixture
@@ -202,7 +211,10 @@ def test_output_directory_and_boolean_guards(tmp_path: Path, image: Path) -> Non
         run(image_path=image, weights_path=tmp_path, output_dir=output)
     with pytest.raises(InvalidInputError, match="overwrite must be a boolean"):
         run(
-            image_path=image, weights_path=tmp_path, output_dir=tmp_path, overwrite=cast(Any, "yes")
+            image_path=image,
+            weights_path=tmp_path,
+            output_dir=tmp_path,
+            overwrite=cast(bool, "yes"),
         )
 
 
@@ -219,10 +231,15 @@ def test_output_directory_and_boolean_guards(tmp_path: Path, image: Path) -> Non
     ],
 )
 def test_generation_controls(
-    tmp_path: Path, image: Path, arguments: dict[str, Any], message: str
+    tmp_path: Path, image: Path, arguments: dict[str, object], message: str
 ) -> None:
     with pytest.raises(InvalidInputError, match=message):
-        run(image_path=image, weights_path=tmp_path, output_dir=tmp_path / "out", **arguments)
+        run(
+            image_path=image,
+            weights_path=tmp_path,
+            output_dir=tmp_path / "out",
+            **cast(GenerationControls, arguments),
+        )
 
 
 def test_runtime_uses_core_and_preserves_metal_requirement(monkeypatch: pytest.MonkeyPatch) -> None:
@@ -278,13 +295,13 @@ def synthetic_generation(monkeypatch: pytest.MonkeyPatch) -> None:
             assert model_dir.is_dir()
             self.dtype = "float32" if precision == "float32" else "bfloat16"
 
-        def vision(self, pixels: np.ndarray) -> tuple[np.ndarray, np.ndarray]:
+        def vision(self, pixels: HostArray) -> tuple[HostArray, HostArray]:
             assert pixels.shape == (1, 1, 2, 2, 2)
             assert pixels.dtype == np.float32
             return embeddings, embeddings
 
     def generate(
-        model: Any, inputs: VolumePrompt, embeddings: Any, *, max_new_tokens: int
+        model: object, inputs: VolumePrompt, embeddings: HostArray, *, max_new_tokens: int
     ) -> tuple[list[int], dict[str, object]]:
         assert inputs.input_ids.shape == (1, 2)
         assert max_new_tokens == 16
@@ -292,9 +309,9 @@ def synthetic_generation(monkeypatch: pytest.MonkeyPatch) -> None:
 
     monkeypatch.setattr(api, "import_mlx", lambda: mx)
 
-    monkeypatch.setitem(
-        sys.modules, "mlx_reason_ct.mlx_model", cast(Any, SimpleNamespace(NativeModel=Model))
-    )
+    module = ModuleType("mlx_reason_ct.mlx_model")
+    setattr(module, "NativeModel", Model)
+    monkeypatch.setitem(sys.modules, "mlx_reason_ct.mlx_model", module)
     monkeypatch.setattr(api, "generate", generate)
 
 
@@ -364,7 +381,7 @@ def test_partial_generation_retains_failure_record(
     synthetic_generation: None,
     monkeypatch: pytest.MonkeyPatch,
 ) -> None:
-    def generate(*args: Any, **kwargs: Any) -> tuple[list[int], dict[str, object]]:
+    def generate(*args: object, **kwargs: object) -> tuple[list[int], dict[str, object]]:
         return [1, 2], {"terminated_by_eos": False, "generated_tokens": 2}
 
     monkeypatch.setattr(api, "generate", generate)
@@ -390,7 +407,7 @@ def test_runner_execution_error_types(
     error: Exception,
     expected: type[Exception],
 ) -> None:
-    def fail(*args: Any, **kwargs: Any) -> dict[str, object]:
+    def fail(*args: object, **kwargs: object) -> dict[str, object]:
         raise error
 
     monkeypatch.setattr(api, "generate_report", fail)
@@ -401,9 +418,9 @@ def test_runner_execution_error_types(
 def test_cli_passes_controls_to_public_api(monkeypatch: pytest.MonkeyPatch) -> None:
     from mlx_reason_ct import cli
 
-    seen: dict[str, Any] = {}
+    seen: dict[str, object] = {}
 
-    def generate_report(*args: Any, **kwargs: Any) -> dict[str, object]:
+    def generate_report(*args: object, **kwargs: object) -> dict[str, object]:
         seen.update(kwargs)
         return {"status": "succeeded"}
 

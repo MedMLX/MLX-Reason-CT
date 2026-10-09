@@ -6,12 +6,13 @@ import json
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from typing import Any, cast
+from typing import cast
 
 import numpy as np
 from jinja2 import Template
 from jinja2.sandbox import ImmutableSandboxedEnvironment
 
+from mlx_reason_ct._host_types import TokenizerContract, Tokenizers
 from mlx_reason_ct.ct_crop import CTCrop, load_anatomy_ct
 from mlx_reason_ct.errors import InvalidPromptError
 
@@ -50,12 +51,14 @@ class Processor:
     """Owns only CPU text and non-neural image preparation; no Transformers import."""
 
     def __init__(self, model_dir: Path) -> None:
-        tokenizers: Any = import_module("tokenizers")
-        self.tokenizer: Any = tokenizers.Tokenizer.from_file(str(model_dir / "tokenizer.json"))
+        tokenizers = cast(Tokenizers, import_module("tokenizers"))
+        self.tokenizer: TokenizerContract = tokenizers.Tokenizer.from_file(
+            str(model_dir / "tokenizer.json")
+        )
         self.tokenizer.no_padding()
         self.tokenizer.no_truncation()
         self.image_token = "<|image_pad|>"
-        self.image_id: int = int(self.tokenizer.token_to_id(self.image_token))
+        self.image_id: int = int(cast(int, self.tokenizer.token_to_id(self.image_token)))
         config = json.loads((model_dir / "image_processor_3d/preprocessor_config.json").read_text())
         self.grid: tuple[int, int, int] = tuple(config["final_grid_size"])
         self.spacing: tuple[float, float, float] = tuple(config["pixdim"])
@@ -67,7 +70,7 @@ class Processor:
         def fail(message: str) -> None:
             raise InvalidPromptError(message)
 
-        cast(dict[str, Any], environment.globals)["raise_exception"] = fail
+        cast(dict[str, object], environment.globals)["raise_exception"] = fail
         self.template: Template = environment.from_string(
             (model_dir / "chat_template.jinja").read_text()
         )

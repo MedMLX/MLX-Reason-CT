@@ -12,13 +12,14 @@ import warnings
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import numpy as np
 
+from mlx_reason_ct._host_types import Ndimage, Nibabel
 from mlx_reason_ct.nifti import load_ct
 
-ndimage: Any = import_module("scipy.ndimage")
+ndimage: Ndimage = cast(Ndimage, import_module("scipy.ndimage"))
 
 
 @dataclass(frozen=True)
@@ -184,7 +185,7 @@ def load_anatomy_ct(
     roi: tuple[int, int, int] = (192, 192, 192),
 ) -> CTCrop:
     """Read, orient, resample, air-pad and select a CT crop on the CPU."""
-    nib: Any = import_module("nibabel")
+    nib = cast(Nibabel, import_module("nibabel"))
     values, source_affine = load_ct(path)
     if values.ndim != 3 or not np.isfinite(values).all():
         raise ValueError("CT input must be a finite scalar 3D HU volume")

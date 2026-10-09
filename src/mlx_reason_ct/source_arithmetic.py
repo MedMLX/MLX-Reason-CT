@@ -13,14 +13,21 @@ import struct
 import zlib
 from functools import cache, lru_cache
 from pathlib import Path
-from typing import Any
+from typing import TYPE_CHECKING, cast
+
+from numpy.typing import NDArray
+
+from mlx_reason_ct._payloads import ArithmeticManifest, EncodedTable, KernelSpec
+
+if TYPE_CHECKING:
+    from mlx_reason_ct._native_types import Array, MetalKernel, Mlx
 
 import numpy as np
 
 from mlx_reason_ct.errors import MissingDependencyError
 from mlx_reason_ct.runtime import import_mlx
 
-mx: Any = import_mlx()
+mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
 MANIFEST_SHA256 = "81e0e6b139d715e6b8139521fac3d6e13a956bb93d4902db96ef5d3c53bcc784"
 OBSERVED_LANES = {
@@ -42,18 +49,18 @@ def _read(path: Path, expected: str) -> bytes:
 
 
 @lru_cache(maxsize=1)
-def _manifest() -> dict[str, Any]:
-    return json.loads(_read(ASSETS / "manifest.json", MANIFEST_SHA256))
+def _manifest() -> ArithmeticManifest:
+    return cast(ArithmeticManifest, json.loads(_read(ASSETS / "manifest.json", MANIFEST_SHA256)))
 
 
 @cache
-def _decoded(name: str) -> np.ndarray[Any, Any]:
+def _decoded(name: str) -> NDArray[np.uint32]:
     row = _manifest()["tables"][name]
     data = _read(ASSETS / row["file"], row["sha256"])
     if data[:10] != b"RADNNCUDA\x01":
         raise MissingDependencyError("Invalid NV-Reason-CT source arithmetic asset")
     length = struct.unpack("<I", data[10:14])[0]
-    metadata = json.loads(data[14 : 14 + length])
+    metadata = cast(EncodedTable, json.loads(data[14 : 14 + length]))
     delta = zlib.decompress(data[14 + length :])
     if (
         metadata["dtype"] != "<u4"
@@ -71,17 +78,20 @@ def _decoded(name: str) -> np.ndarray[Any, Any]:
 
 
 @cache
-def _table(name: str) -> Any:
+def _table(name: str) -> Array:
     return mx.array(_decoded(name), dtype=mx.uint32)
 
 
 @lru_cache(maxsize=1)
-def _kernel_text() -> dict[str, Any]:
-    return json.loads(_read(ASSETS / "kernels.json", _manifest()["kernels_sha256"]))
+def _kernel_text() -> dict[str, KernelSpec]:
+    return cast(
+        dict[str, KernelSpec],
+        json.loads(_read(ASSETS / "kernels.json", _manifest()["kernels_sha256"])),
+    )
 
 
 @cache
-def _kernel(name: str) -> Any:
+def kernel(name: str) -> MetalKernel:
     value = _kernel_text()[name]
     return mx.fast.metal_kernel(
         name="nv_reason_source_" + name,
@@ -92,8 +102,8 @@ def _kernel(name: str) -> Any:
     )
 
 
-def _elementwise(name: str, values: Any, extra: list[Any] | None = None) -> Any:
-    return _kernel(name)(
+def _elementwise(name: str, values: Array, extra: list[Array] | None = None) -> Array:
+    return kernel(name)(
         inputs=[values, *(extra or [])],
         template=[("Count", values.size)],
         grid=(values.size, 1, 1),
@@ -103,33 +113,33 @@ def _elementwise(name: str, values: Any, extra: list[Any] | None = None) -> Any:
     )[0]
 
 
-def rsqrt(values: Any) -> Any:
+def rsqrt(values: Array) -> Array:
     return _elementwise("rsqrt", values, [_table("rsqrt")])
 
 
-def _exp_tables() -> list[Any]:
+def _exp_tables() -> list[Array]:
     return [_table("exp2_" + name) for name in ("positive", "negative", "negative_direct")]
 
 
-def exp(values: Any) -> Any:
+def exp(values: Array) -> Array:
     return _elementwise("exp", values, _exp_tables())
 
 
-def log1p(values: Any) -> Any:
+def log1p(values: Array) -> Array:
     return _elementwise("log1p", values)
 
 
-def silu(values: Any) -> Any:
+def silu(values: Array) -> Array:
     return _activation(values, False)
 
 
-def sigmoid(values: Any) -> Any:
+def sigmoid(values: Array) -> Array:
     return _activation(values, True)
 
 
-def _activation(values: Any, sigmoid_mode: bool) -> Any:
+def _activation(values: Array, sigmoid_mode: bool) -> Array:
     table = _table("sigmoid_bf16" if sigmoid_mode else "silu_fp32")
-    result = _kernel("activation")(
+    result = kernel("activation")(
         inputs=[values.astype(mx.float32), table],
         template=[("Count", values.size), ("Sigmoid", sigmoid_mode)],
         grid=(values.size, 1, 1),
@@ -140,7 +150,7 @@ def _activation(values: Any, sigmoid_mode: bool) -> Any:
     return result.astype(values.dtype)
 
 
-def mean_square(square: Any) -> Any:
+def mean_square(square: Array) -> Array:
     width = square.shape[-1]
     factor = {128: 0x3C000000, 256: 0x3B800000, 2560: 0x39CCCCCD}[width]
     rows = square.size // width
@@ -151,7 +161,7 @@ def mean_square(square: Any) -> Any:
     initial_lanes = min(vector_lanes, 32)
     row_lanes = min(1 << (rows.bit_length() - 1), 512 // initial_lanes)
     lanes = min(vector_lanes, 512 // row_lanes)
-    return _kernel("mean")(
+    return kernel("mean")(
         inputs=[square],
         template=[("Rows", rows), ("Width", width), ("FactorBits", factor), ("Lanes", lanes)],
         grid=(rows * lanes, 1, 1),
@@ -161,9 +171,9 @@ def mean_square(square: Any) -> Any:
     )[0]
 
 
-def sum_square(square: Any) -> Any:
+def sum_square(square: Array) -> Array:
     rows = square.size // 128
-    return _kernel("square_sum")(
+    return kernel("square_sum")(
         inputs=[square],
         template=[("Rows", rows)],
         grid=(rows * 16, 1, 1),
@@ -173,11 +183,11 @@ def sum_square(square: Any) -> Any:
     )[0]
 
 
-def sum_product(product: Any) -> Any:
+def sum_product(product: Array) -> Array:
     width = product.shape[-1]
     shape = (*product.shape[:-2], width)
     outputs = product.size // width
-    return _kernel("triangle_sum")(
+    return kernel("triangle_sum")(
         inputs=[product],
         template=[("Width", width), ("Outputs", outputs)],
         grid=(outputs, 1, 1),
@@ -188,10 +198,10 @@ def sum_product(product: Any) -> Any:
 
 
 def projection(
-    x: Any, weight: Any, *, bias: Any = None, slices: int = 1, sliced: bool = False
-) -> Any:
+    x: Array, weight: Array, *, bias: Array | None = None, slices: int = 1, sliced: bool = False
+) -> Array:
     """Measured K8 HMMA carries and source BF16 epilogue/partition stores."""
-    parts: list[Any] = []
+    parts: list[Array] = []
     for start in range(0, x.shape[1], 128):
         part = x[:, start : start + 128]
         part_width = part.shape[-1] // slices
@@ -199,7 +209,7 @@ def projection(
         value = mx.zeros((*part.shape[:-1], width), dtype=mx.float32)
         zero = mx.zeros((1,), dtype=mx.float32)
         for first in range(0, part.shape[-1], part_width):
-            value = _kernel("sliced_projection" if sliced else "projection")(
+            value = kernel("sliced_projection" if sliced else "projection")(
                 inputs=[
                     part[..., first : first + part_width].astype(mx.float32),
                     weight[:, first : first + part_width].astype(mx.float32),
@@ -223,10 +233,10 @@ def projection(
     return mx.concatenate(parts, axis=1)
 
 
-def cached_projection(x: Any, weight: Any) -> Any:
+def cached_projection(x: Array, weight: Array) -> Array:
     width, length = weight.shape
     lanes = OBSERVED_LANES[(length, width)]
-    return _kernel("cached_projection")(
+    return kernel("cached_projection")(
         inputs=[x, weight],
         template=[("Lanes", lanes), ("K", length), ("N", width)],
         grid=(lanes, ((width + 3) // 4) * 4, 1),
@@ -236,13 +246,13 @@ def cached_projection(x: Any, weight: Any) -> Any:
     )[0].astype(mx.bfloat16)
 
 
-def convolution(x: Any, weight: Any) -> Any:
+def convolution(x: Array, weight: Array) -> Array:
     """C1 padded to C8 inside each source Conv3D tap's HMMA operation."""
-    parts: list[Any] = []
+    parts: list[Array] = []
     for start in range(0, x.shape[1], 128):
         part = x[:, start : start + 128]
         rows, width = part.size // 512, weight.shape[0]
-        value = _kernel("stem")(
+        value = kernel("stem")(
             inputs=[part.astype(mx.float32), weight.astype(mx.float32)],
             template=[("M", rows), ("N", width), ("K", 512)],
             grid=(rows * width, 1, 1),
@@ -255,7 +265,7 @@ def convolution(x: Any, weight: Any) -> Any:
     return mx.concatenate(parts, axis=1)
 
 
-def layernorm(values: Any, weight: Any, bias: Any, eps: float) -> Any:
+def layernorm(values: Array, weight: Array, bias: Array, eps: float) -> Array:
     fp = values.astype(mx.float32)
     width, rows = fp.shape[-1], fp.size // fp.shape[-1]
     reciprocal = mx.array(
@@ -266,7 +276,7 @@ def layernorm(values: Any, weight: Any, bias: Any, eps: float) -> Any:
             ]
         )
     )
-    means, variances = _kernel("layernorm_statistics")(
+    means, variances = kernel("layernorm_statistics")(
         inputs=[fp, reciprocal],
         template=[("Width", width)],
         grid=(rows * 128, 1, 1),
@@ -275,7 +285,7 @@ def layernorm(values: Any, weight: Any, bias: Any, eps: float) -> Any:
         output_dtypes=[mx.float32] * 2,
     )
     inverses = rsqrt(variances + eps)
-    return _kernel("layernorm_affine")(
+    return kernel("layernorm_affine")(
         inputs=[fp, means, inverses, weight.astype(mx.float32), bias.astype(mx.float32)],
         template=[("Width", width), ("Count", fp.size)],
         grid=(fp.size, 1, 1),
@@ -285,7 +295,7 @@ def layernorm(values: Any, weight: Any, bias: Any, eps: float) -> Any:
     )[0].astype(mx.bfloat16)
 
 
-def vision_constants() -> tuple[Any, Any]:
+def vision_constants() -> tuple[Array, Array]:
     values = _decoded("vision_rotary").view(np.float32)
     coords = np.indices((24, 24, 24), dtype=np.int32).reshape(3, -1).T
     sin, cos = [
@@ -294,8 +304,10 @@ def vision_constants() -> tuple[Any, Any]:
     return sin, cos
 
 
-def gated_delta(q: Any, k: Any, v: Any, decay: Any, beta: Any, state: Any) -> tuple[Any, Any]:
-    output, updated = _kernel("recurrence")(
+def gated_delta(
+    q: Array, k: Array, v: Array, decay: Array, beta: Array, state: Array
+) -> tuple[Array, Array]:
+    output, updated = kernel("recurrence")(
         inputs=[q, k, v, decay, beta, state.swapaxes(-1, -2)],
         template=[("Ratio", 32 // q.shape[2])],
         grid=(4096, 1, 1),
@@ -306,11 +318,11 @@ def gated_delta(q: Any, k: Any, v: Any, decay: Any, beta: Any, state: Any) -> tu
     return output, updated.swapaxes(-1, -2)
 
 
-def _split_attention(q: Any, k: Any, v: Any) -> Any:
+def _split_attention(q: Array, k: Array, v: Array) -> Array:
     # Pinned source128-SM GQA dispatch; independently checked at every transition.
     splits = (k.shape[2] + 255) // 256
     meta = mx.array([1, k.shape[2], 16, 4, 0, splits, 1], dtype=mx.int32)
-    parts, lse, _ = _kernel("split_attention")(
+    parts, lse, _ = kernel("split_attention")(
         inputs=[
             q,
             k,
@@ -327,7 +339,7 @@ def _split_attention(q: Any, k: Any, v: Any) -> Any:
         output_shapes=[(splits, 1, 16, 1, 256), (splits, 1, 16, 1), (splits, 1, 16, 1)],
         output_dtypes=[mx.float32] * 3,
     )
-    scales, _ = _kernel("split_scales")(
+    scales, _ = kernel("split_scales")(
         inputs=[lse, *_exp_tables()],
         template=[("Splits", splits)],
         grid=(16, 1, 1),
@@ -335,7 +347,7 @@ def _split_attention(q: Any, k: Any, v: Any) -> Any:
         output_shapes=[(splits, 1, 16, 1), (32,)],
         output_dtypes=[mx.float32] * 2,
     )
-    return _kernel("split_combine")(
+    return kernel("split_combine")(
         inputs=[parts, scales],
         template=[("Splits", splits)],
         grid=(4096, 1, 1),
@@ -345,7 +357,7 @@ def _split_attention(q: Any, k: Any, v: Any) -> Any:
     )[0].astype(mx.bfloat16)
 
 
-def attention(q: Any, k: Any, v: Any, *, causal: bool, offset: int) -> Any:
+def attention(q: Array, k: Array, v: Array, *, causal: bool, offset: int) -> Array:
     if (
         q.shape == (1, 16, 1, 256)
         and k.shape[:2] == (1, 4)
@@ -360,12 +372,12 @@ def attention(q: Any, k: Any, v: Any, *, causal: bool, offset: int) -> Any:
             mx.pad(value, [(0, 0), (0, 0), (0, 0), (0, padded - logical)]) for value in (q, k, v)
         ]
     batch, heads, length, width = q.shape
-    outputs: list[Any] = []
+    outputs: list[Array] = []
     for start in range(0, length, 64 if logical == 72 else 128):
         query = q[:, :, start : start + (64 if logical == 72 else 128)]
         count = query.shape[2]
         meta = mx.array([count, k.shape[2], heads, k.shape[1], offset + start], dtype=mx.int32)
-        value = _kernel("attention")(
+        value = kernel("attention")(
             inputs=[
                 query,
                 k,

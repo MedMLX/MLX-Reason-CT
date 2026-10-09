@@ -8,14 +8,17 @@ long CT token sequences.
 from __future__ import annotations
 
 import math
-from typing import Any
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mlx_reason_ct._native_types import Array, Mlx
 
 from mlx_reason_ct.runtime import import_mlx
 
-mx: Any = import_mlx()
+mx: Mlx = import_mlx()
 
 
-def source_cumsum(g: Any) -> Any:
+def source_cumsum(g: Array) -> Array:
     """ATen CUDA's Sklansky order, including its row-count-dependent block size.
 
     Decay uses differences of these sums inside exp; reassociation at long CT
@@ -24,7 +27,7 @@ def source_cumsum(g: Any) -> Any:
     rows = math.prod(g.shape[:-1])
     threads_log = min(9, max(4, (9 + 6 - (rows - 1).bit_length()) // 2))
     block_size = min(64, 2 << threads_log)
-    output: list[Any] = []
+    output: list[Array] = []
     previous = mx.zeros(g.shape[:-1], dtype=mx.float32)
     index = mx.arange(block_size)
     for start in range(0, 64, block_size):
@@ -41,15 +44,15 @@ def source_cumsum(g: Any) -> Any:
 
 
 def chunk_delta(
-    q: Any,
-    k: Any,
-    v: Any,
-    g: Any,
-    beta: Any,
-    state: Any,
+    q: Array,
+    k: Array,
+    v: Array,
+    g: Array,
+    beta: Array,
+    state: Array,
     *,
     source_bfloat16: bool = False,
-) -> tuple[Any, Any]:
+) -> tuple[Array, Array]:
     """Consume normalized/scaled Q/K and log decay; state uses MLX-LM's V,K order."""
     from mlx_reason_ct import source_arithmetic
 
@@ -60,10 +63,10 @@ def chunk_delta(
     repeat = heads // q.shape[2]
     q, k = mx.repeat(q, repeat, axis=2), mx.repeat(k, repeat, axis=2)
 
-    def chunks(x: Any) -> Any:
-        x = x.transpose(0, 2, 1, 3).astype(mx.float32)
+    def chunks(x: Array) -> Array:
+        x = mx.transpose(x, (0, 2, 1, 3)).astype(mx.float32)
         x = mx.pad(x, [(0, 0), (0, 0), (0, padding), (0, 0)])
-        return x.reshape(batch, heads, count, 64, x.shape[-1])
+        return mx.reshape(x, (batch, heads, count, 64, x.shape[-1]))
 
     q, k, v = chunks(q), chunks(k), chunks(v)
     beta = chunks(beta[..., None])
@@ -85,7 +88,7 @@ def chunk_delta(
     values = attn @ vb
     keys = attn @ (kb * exponential(g)[..., None])
     state = state.swapaxes(-1, -2)
-    output: list[Any] = []
+    output: list[Array] = []
     mx.eval(values, keys, decay)
     for i in range(count):
         qi, ki = q[:, :, i], k[:, :, i]
@@ -99,5 +102,5 @@ def chunk_delta(
         )
         mx.eval(part, state)
         output.append(part)
-    result = mx.concatenate(output, axis=2)[:, :, :length].transpose(0, 2, 1, 3)
+    result = mx.transpose(mx.concatenate(output, axis=2)[:, :, :length], (0, 2, 1, 3))
     return result, mx.contiguous(state.swapaxes(-1, -2))

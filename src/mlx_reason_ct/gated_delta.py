@@ -1,11 +1,17 @@
 # Copyright © 2025 Apple Inc.
 
+from __future__ import annotations
+
 import os
-from typing import Any, Optional, Tuple
+
+from typing import TYPE_CHECKING
+
+if TYPE_CHECKING:
+    from mlx_reason_ct._native_types import Array, MetalKernel
 
 from mlx_reason_ct.runtime import import_mlx
 
-mx: Any = import_mlx()
+mx = import_mlx()
 
 # For the shapes it supports, the packed kernel is bitwise-identical by
 # construction to an explicit-tree comparator kernel that the tests pin it
@@ -15,7 +21,9 @@ mx: Any = import_mlx()
 _ENABLE_GDN_PACKED = os.environ.get("MLX_GDN_PACKED", "1") != "0"
 
 
-def _make_gated_delta_kernel(has_mask=False, vectorized=False):
+def _make_gated_delta_kernel(
+    has_mask: bool = False, vectorized: bool = False,
+) -> MetalKernel:
     mask_source = "mask[b_idx * T + t]" if has_mask else "true"
 
     # Configure g indexing based on whether gating is vectorized
@@ -118,7 +126,7 @@ def _make_gated_delta_kernel(has_mask=False, vectorized=False):
     )
 
 
-def _make_gated_delta_kernel_xtree():
+def _make_gated_delta_kernel_xtree() -> MetalKernel:
     """Scalar-gate, unmasked kernel with an explicitly-written reduction.
 
     This is the unpacked comparator for the packed kernel: it replaces the
@@ -211,7 +219,7 @@ def _make_gated_delta_kernel_xtree():
     )
 
 
-def _make_gated_delta_packed_kernel():
+def _make_gated_delta_packed_kernel() -> MetalKernel:
     """Make the scalar-gate Dk=128 prefill specialization.
 
     The generic kernel assigns one 32-lane SIMD-group to each value row. For
@@ -347,16 +355,16 @@ _gated_delta_kernel_packed = _make_gated_delta_packed_kernel()
 
 
 def _gated_delta_kernel_impl(
-    q: mx.array,
-    k: mx.array,
-    v: mx.array,
-    g: mx.array,
-    beta: mx.array,
-    state: mx.array,
-    mask: Optional[mx.array] = None,
+    q: Array,
+    k: Array,
+    v: Array,
+    g: Array,
+    beta: Array,
+    state: Array,
+    mask: Array | None = None,
     *,
     allow_packed: bool,
-) -> Tuple[mx.array, mx.array]:
+) -> list[Array]:
     B, T, Hk, Dk = k.shape
     Hv, Dv = v.shape[2:]
     input_type = q.dtype
@@ -377,7 +385,7 @@ def _gated_delta_kernel_impl(
 
     if packed_eligible and allow_packed and _ENABLE_GDN_PACKED:
         kernel = _gated_delta_kernel_packed
-        inputs = [q, k, v, g, beta, state, T]
+        inputs: list[Array | int] = [q, k, v, g, beta, state, T]
         grid = (32, Dv // 8, B * Hv)
         threadgroup = (32, 2, 1)
     elif g.ndim == 4:
@@ -415,14 +423,14 @@ def _gated_delta_kernel_impl(
 
 
 def gated_delta_kernel_xtree(
-    q: mx.array,
-    k: mx.array,
-    v: mx.array,
-    g: mx.array,
-    beta: mx.array,
-    state: mx.array,
-    mask: Optional[mx.array] = None,
-) -> Tuple[mx.array, mx.array]:
+    q: Array,
+    k: Array,
+    v: Array,
+    g: Array,
+    beta: Array,
+    state: Array,
+    mask: Array | None = None,
+) -> list[Array]:
     """Explicit-tree comparator for the packed kernel (test use).
 
     Runs the unpacked layout with the same explicitly-written reduction tree
@@ -450,25 +458,25 @@ def gated_delta_kernel_xtree(
 
 
 def gated_delta_kernel_unpacked(
-    q: mx.array,
-    k: mx.array,
-    v: mx.array,
-    g: mx.array,
-    beta: mx.array,
-    state: mx.array,
-    mask: Optional[mx.array] = None,
-) -> Tuple[mx.array, mx.array]:
+    q: Array,
+    k: Array,
+    v: Array,
+    g: Array,
+    beta: Array,
+    state: Array,
+    mask: Array | None = None,
+) -> list[Array]:
     """Run the original one-value-row-per-SIMD-group kernel."""
     return _gated_delta_kernel_impl(q, k, v, g, beta, state, mask, allow_packed=False)
 
 
 def gated_delta_kernel(
-    q: mx.array,
-    k: mx.array,
-    v: mx.array,
-    g: mx.array,
-    beta: mx.array,
-    state: mx.array,
-    mask: Optional[mx.array] = None,
-) -> Tuple[mx.array, mx.array]:
+    q: Array,
+    k: Array,
+    v: Array,
+    g: Array,
+    beta: Array,
+    state: Array,
+    mask: Array | None = None,
+) -> list[Array]:
     return _gated_delta_kernel_impl(q, k, v, g, beta, state, mask, allow_packed=True)

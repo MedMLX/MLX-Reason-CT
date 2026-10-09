@@ -2,16 +2,17 @@
 
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import numpy as np
 
+from mlx_reason_ct._host_types import Affine, FloatArray, Nibabel
 from mlx_reason_ct.errors import InvalidInputError, MissingDependencyError
 
 
-def load_ct(path: Path) -> tuple[np.ndarray, np.ndarray]:
+def load_ct(path: Path) -> tuple[FloatArray, Affine]:
     try:
-        nib: Any = import_module("nibabel")
+        nib = cast(Nibabel, import_module("nibabel"))
     except ImportError as error:
         raise MissingDependencyError(
             "Reading CT NIfTI inputs requires nibabel; install mlx-reason-ct.",

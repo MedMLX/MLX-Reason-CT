@@ -4,14 +4,15 @@ from __future__ import annotations
 
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import numpy as np
 import pytest
 
+from mlx_reason_ct._host_types import Nibabel
 from mlx_reason_ct.ct_crop import anatomy_crop, load_anatomy_ct
 
-nib: Any = import_module("nibabel")
+nib = cast(Nibabel, import_module("nibabel"))
 
 
 def test_air_padding_preserves_hu_and_voxel_world_coordinates(tmp_path: Path) -> None:

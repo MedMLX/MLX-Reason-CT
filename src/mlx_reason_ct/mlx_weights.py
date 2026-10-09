@@ -10,10 +10,12 @@ from collections import defaultdict
 from importlib import import_module
 from pathlib import Path
 from tempfile import TemporaryDirectory
-from typing import Any, cast
+from typing import cast
 
 import numpy as np
 
+from mlx_reason_ct._host_types import Safetensors
+from mlx_reason_ct._payloads import BundleManifest
 from mlx_reason_ct.errors import InvalidInputError
 from mlx_reason_ct.integrity import file_sha256
 
@@ -44,14 +46,14 @@ def validate_source(model_dir: Path) -> None:
             raise InvalidInputError(f"NV-Reason-CT pinned asset missing or changed: {name}")
 
 
-def read_manifest(model_dir: Path) -> dict[str, Any]:
+def read_manifest(model_dir: Path) -> BundleManifest:
     for name in RUNTIME_FILES:
         if file_sha256(model_dir / name) != PINS[name]:
             raise InvalidInputError(f"NV-Reason-CT runtime asset changed: {name}")
     payload: object = json.loads((model_dir / MANIFEST).read_text())
     if not isinstance(payload, dict):
         raise InvalidInputError("MLX-Reason-CT cache manifest must be an object")
-    manifest = cast(dict[str, Any], payload)
+    manifest = cast(BundleManifest, payload)
     if (
         manifest.get("engine") != ENGINE
         or manifest.get("revision") != REVISION
@@ -60,7 +62,7 @@ def read_manifest(model_dir: Path) -> dict[str, Any]:
         or manifest.get("runtime_sha256") != {name: PINS[name] for name in RUNTIME_FILES}
     ):
         raise InvalidInputError("MLX-Reason-CT cache provenance differs from the pinned conversion")
-    inventory: object = manifest.get("shards", {})
+    inventory = cast(object, manifest.get("shards", {}))
     if not isinstance(inventory, dict):
         raise InvalidInputError("MLX-Reason-CT cache shard inventory must be an object")
     shards = cast(dict[str, str], inventory)
@@ -74,7 +76,7 @@ def read_manifest(model_dir: Path) -> dict[str, Any]:
 
 def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
     """Convert offline using bounded CPU mappings; no model execution or network IO."""
-    safetensors: Any = import_module("safetensors.numpy")
+    safetensors = cast(Safetensors, import_module("safetensors.numpy"))
 
     validate_source(model_dir)
     source = model_dir / "model.safetensors"

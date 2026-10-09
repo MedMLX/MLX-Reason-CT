@@ -1,7 +1,7 @@
 """MLX-Reason-CT: CT reporting on Apple Silicon with lazy public exports."""
 
 from importlib import import_module
-from typing import TYPE_CHECKING, Any
+from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
     from mlx_reason_ct.api import generate_report
@@ -17,7 +17,7 @@ _EXPORTS = {
 }
 
 
-def __getattr__(name: str) -> Any:
+def __getattr__(name: str) -> object:
     module = _EXPORTS.get(name)
     if module is None:
         raise AttributeError(f"module {__name__!r} has no attribute {name!r}")

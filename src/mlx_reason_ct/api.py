@@ -5,7 +5,13 @@ from __future__ import annotations
 import json
 from pathlib import Path
 from time import perf_counter
-from typing import Any, cast
+from typing import TYPE_CHECKING, cast
+
+from mlx_reason_ct._payloads import BundleManifest
+
+if TYPE_CHECKING:
+    from mlx_reason_ct._native_types import Array, GenerationModel
+    from mlx_reason_ct.mlx_model import NativeModel
 
 from mlx_reason_ct.errors import AssetNotReadyError, InvalidInputError, ModelExecutionError
 from mlx_reason_ct.mlx_weights import read_manifest
@@ -20,7 +26,7 @@ PRECISION_PROFILES: dict[str, str] = {
 }
 
 
-def _load_assets(model_dir: Path) -> tuple[dict[str, Any], Processor]:
+def _load_assets(model_dir: Path) -> tuple[BundleManifest, Processor]:
     try:
         return read_manifest(model_dir), Processor(model_dir)
     except (InvalidInputError, OSError, ValueError, KeyError, TypeError) as error:
@@ -32,7 +38,7 @@ def _load_assets(model_dir: Path) -> tuple[dict[str, Any], Processor]:
         ) from error
 
 
-def _load_model(model_dir: Path, *, precision: str) -> Any:
+def _load_model(model_dir: Path, *, precision: str) -> NativeModel:
     from mlx_reason_ct.mlx_model import NativeModel
 
     try:
@@ -80,9 +86,9 @@ def _validate_generation_options(
 
 
 def generate(
-    model: Any,
+    model: GenerationModel,
     inputs: VolumePrompt,
-    embeddings: Any,
+    embeddings: Array,
     *,
     max_new_tokens: int,
 ) -> tuple[list[int], dict[str, object]]:
@@ -105,7 +111,7 @@ def generate(
     for index in range(max_new_tokens):
         if not bool(mx.all(mx.isfinite(logit)).item()):
             raise ModelExecutionError("NV-Reason-CT produced nonfinite logits")
-        token = int(mx.argmax(logit[0, -1]).item())
+        token = int(cast(int, mx.argmax(logit[0, -1]).item()))
         output.append(token)
         if token in model.eos_ids or index + 1 == max_new_tokens:
             break

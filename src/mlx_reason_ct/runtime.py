@@ -2,12 +2,15 @@
 
 import platform
 from importlib.metadata import version
-from typing import Any
+from typing import TYPE_CHECKING, cast
+
+if TYPE_CHECKING:
+    from mlx_reason_ct._native_types import Mlx
 
 from mlx_reason_ct.errors import MissingDependencyError
 
 
-def import_mlx() -> Any:
+def import_mlx() -> "Mlx":
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise MissingDependencyError(
             "NV-Reason-CT inference requires macOS on Apple Silicon with Metal",
@@ -18,7 +21,7 @@ def import_mlx() -> Any:
     )
 
     try:
-        return shared_import_mlx()
+        return cast("Mlx", shared_import_mlx())
     except (ImportError, OSError) as error:
         raise MissingDependencyError(
             "NV-Reason-CT cannot load the MLX Metal runtime; "

@@ -3,17 +3,18 @@
 import json
 from importlib import import_module
 from pathlib import Path
-from typing import Any
+from typing import cast
 
 import numpy as np
 import pytest
 
+from mlx_reason_ct._host_types import Nibabel
 from mlx_reason_ct.errors import InvalidInputError, InvalidPromptError, ModelExecutionError
 from mlx_reason_ct.nifti import load_ct
 from mlx_reason_ct.processor_mlx import volume_positions
 from mlx_reason_ct.response import save_response
 
-nib: Any = import_module("nibabel")
+nib = cast(Nibabel, import_module("nibabel"))
 
 
 @pytest.mark.parametrize("unit,scale", [("mm", 1.0), ("meter", 0.001), ("micron", 1000)])
