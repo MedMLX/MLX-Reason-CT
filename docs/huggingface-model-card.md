@@ -3,6 +3,7 @@ license: openmdw-1.1
 language:
 - en
 library_name: mlx
+base_model: nvidia/NV-Reason-CT
 pipeline_tag: image-text-to-text
 inference: false
 tags:
@@ -31,7 +32,9 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 
 MLX port by **Joseph Sandoval**.
 [GitHub releases](https://github.com/MedMLX/MLX-Reason-CT/releases) ·
-[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md)
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md) ·
+[Paper](https://arxiv.org/abs/2609.27511) ·
+[HF collection](https://huggingface.co/collections/josand/medmlx-mlx-reason-ct-6ac85b2663d2ca5df1887db2)
 
 **Requires the companion `mlx-reason-ct` runtime.** Follow the quick start below.
 Hugging Face's generated "Use this model" snippet uses `mlx-vlm`, which does not
@@ -44,10 +47,6 @@ Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly whe
 Metal is unavailable.
 
 `v0.2.2` uses the public Apache-2.0 `medmlx-core@v0.1.2` runtime.
-
-**Installation status:** `v0.2.1` depends on the currently private
-[medmlx-core](https://github.com/MedMLX/medmlx-core) repository. Installation
-requires GitHub access to that dependency.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
@@ -83,6 +82,10 @@ To ask a question about the CT, set `--prompt` to your question.
 For an existing Python 3.12 environment, install the same wheel with `pip install`.
 For source development, clone [the repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use `uv run mlx-reason-ct` for the commands above.
+
+For a generated input with no patient data, follow the
+[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/synthetic-walkthrough.md).
+It covers installation, bundle verification, input generation and completion checks.
 
 ## Input and output
 

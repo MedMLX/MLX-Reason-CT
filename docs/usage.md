@@ -1,5 +1,8 @@
 # Usage
 
+Start with the [synthetic CT walkthrough](synthetic-walkthrough.md) to exercise
+installation and the report workflow using a generated geometric phantom.
+
 ## CT question answering
 
 Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
