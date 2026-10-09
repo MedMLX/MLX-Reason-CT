@@ -75,6 +75,9 @@ check, including the probability tiles formed inside the kernel. Special
 operands and blocks outside the alignment window use the original bit-shift
 block. Query/key and probability/value accumulation order, softmax arithmetic,
 and the 64-query vision and 128-query decoder launch limits are unchanged.
+Query blocks are reused across score columns, and shuffled probability blocks
+are reused across value channels. Each score and output retains its original
+K8 accumulation order.
 Projection launches group up to 512 rows to reduce dispatch overhead, retaining
 the same per-output arithmetic and partition stores. See the
 [verification scope](docs/verification.md) for measured evidence and limits.
@@ -92,6 +95,8 @@ Metal tests also compare optimized attention K8 carries with the retained
 bit-shift reference and analytic truncation/cancellation/overflow anchors.
 Batched projections are checked against an unbatched reference across a ragged
 batch boundary with bias and source partition stores.
+Uniform-attention tests independently check masked value means across key tiles,
+query batches, output channels and grouped heads.
 
 See [verification scope](docs/verification.md). These component checks do not
 establish full-model parity, clinical validation or report accuracy.

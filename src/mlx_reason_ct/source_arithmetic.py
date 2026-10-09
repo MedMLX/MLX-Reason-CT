@@ -29,7 +29,7 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
-MANIFEST_SHA256 = "e7b9df2fdf9fab5a4a849ecd4baaf52045c0001f752267e659211b1878e75fb1"
+MANIFEST_SHA256 = "9f53fa38c113a463f2f241e5c790706c16a8423a2cda6b5ab27a0019dfbc11b8"
 OBSERVED_LANES = {
     (2560, 32): 32,
     (2560, 1024): 16,

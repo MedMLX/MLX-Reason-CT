@@ -487,6 +487,44 @@ def test_native_projection_batches_preserve_partitioned_outputs() -> None:
     )
 
 
+@pytest.mark.parametrize("width,heads,kv_heads,causal", [(72, 3, 3, False), (256, 4, 1, True)])
+def test_native_attention_preserves_uniform_masked_value_means(
+    width: int, heads: int, kv_heads: int, causal: bool
+) -> None:
+    _require_metal()
+    from mlx_reason_ct import source_arithmetic
+
+    mx = source_arithmetic.mx
+    query_length, key_length, offset = 129, 137, 8
+    channels = np.arange(width)[None, None, :]
+    keys = np.arange(key_length)[None, :, None]
+    groups = np.arange(kv_heads)[:, None, None]
+    values = (((channels + keys * 3 + groups * 5) % 17 - 8) / 8).astype(np.float32)
+    # Zero Q/K makes visible probabilities uniform. Dyadic values sum exactly;
+    # their masked means independently check key, channel and grouped-head mapping
+    # across ragged key tiles and multiple query launches.
+    expected = np.empty((1, heads, query_length, width), dtype=np.float32)
+    for head in range(heads):
+        for row in range(query_length):
+            count = min(key_length, offset + row + 1) if causal else key_length
+            expected[0, head, row] = values[head // (heads // kv_heads), :count].mean(
+                axis=0, dtype=np.float64
+            )
+    bits = expected.view(np.uint32)
+    expected = ((bits + np.uint32(0x7FFF) + ((bits >> 16) & 1)) & np.uint32(0xFFFF0000)).view(
+        np.float32
+    )
+    actual = source_arithmetic.attention(
+        mx.zeros((1, heads, query_length, width), dtype=mx.bfloat16),
+        mx.zeros((1, kv_heads, key_length, width), dtype=mx.bfloat16),
+        mx.array(values[None]).astype(mx.bfloat16),
+        causal=causal,
+        offset=offset,
+    )
+    assert actual.dtype == mx.bfloat16
+    np.testing.assert_array_equal(cast(FloatArray, np.array(actual.astype(mx.float32))), expected)
+
+
 def test_native_attention_k8_preserves_reference_carries() -> None:
     _require_metal()
     from mlx_reason_ct import source_arithmetic
