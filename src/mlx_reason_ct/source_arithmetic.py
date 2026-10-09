@@ -29,7 +29,7 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
-MANIFEST_SHA256 = "cd235f8a6c4be5ff1fb2cd60bc4237ab3de42d791c05070aa8d8d6a4ed201526"
+MANIFEST_SHA256 = "e7b9df2fdf9fab5a4a849ecd4baaf52045c0001f752267e659211b1878e75fb1"
 OBSERVED_LANES = {
     (2560, 32): 32,
     (2560, 1024): 16,
@@ -231,8 +231,8 @@ def projection(
     special = operand_flags(x, weight)
     zero = mx.zeros((1,), dtype=mx.float32)
     parts: list[Array] = []
-    for start in range(0, x.shape[1], 128):
-        part = x[:, start : start + 128]
+    for start in range(0, x.shape[1], 512):
+        part = x[:, start : start + 512]
         rows = part.size // length
         # More rows per thread reuse each weight block; small grids keep one.
         per_thread = 4 if rows * width >= 262144 else 2 if rows * width >= 65536 else 1

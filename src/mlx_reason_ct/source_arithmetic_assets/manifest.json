@@ -3,7 +3,7 @@
   "source_torch_git": "cf30153c4c131c8164ee7798e5022d810682e2cb",
   "source_hardware": "NVIDIA GeForce RTX4090",
   "mlx": "0.32.2",
-  "kernels_sha256": "b25cba2186f7eb9f59046c7ee7096fa9911d840289083a461f704242260c2b51",
+  "kernels_sha256": "5ee4a5a793ad849484b21df568149b3f9e465b4193e68f2cfa0d357d8bb41509",
   "tables": {
     "rsqrt": {
       "file": "rsqrt.ruc",

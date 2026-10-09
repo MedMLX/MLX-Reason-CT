@@ -70,6 +70,15 @@ kernel on seeded wide-exponent, cancellation, inf/NaN/subnormal, ragged-row,
 bias and sliced cases. On one M1 Max it was 1.6-3.8 times faster for 1024-row
 decoder projections. This timing is not full-model qualification.
 
+Source-BF16 attention uses the same fast K8 alignment with a local operand
+check, including the probability tiles formed inside the kernel. Special
+operands and blocks outside the alignment window use the original bit-shift
+block. Query/key and probability/value accumulation order, softmax arithmetic,
+and the 64-query vision and 128-query decoder launch limits are unchanged.
+Projection launches group up to 512 rows to reduce dispatch overhead, retaining
+the same per-output arithmetic and partition stores. See the
+[verification scope](docs/verification.md) for measured evidence and limits.
+
 ## Current test references
 
 Tests use one reference recorded on darwin-arm64 by
@@ -78,6 +87,11 @@ and explicit BF16 rounding; it does not import production arithmetic or execute
 Metal. Tests check numerical properties with rounding bounds, output dtypes,
 cache reuse, generation completion and request limits. The independent recurrence
 comparison retains its existing tolerances.
+
+Metal tests also compare optimized attention K8 carries with the retained
+bit-shift reference and analytic truncation/cancellation/overflow anchors.
+Batched projections are checked against an unbatched reference across a ragged
+batch boundary with bias and source partition stores.
 
 See [verification scope](docs/verification.md). These component checks do not
 establish full-model parity, clinical validation or report accuracy.

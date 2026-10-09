@@ -12,6 +12,7 @@ import pytest
 from numpy.typing import NDArray
 
 from mlx_reason_ct._host_types import FloatArray
+from mlx_reason_ct._payloads import KernelSpec
 
 if TYPE_CHECKING:
     from mlx_reason_ct._native_types import Array
@@ -442,6 +443,110 @@ def test_native_projection_flags_operands_outside_fast_alignment(
         operand = mx.array(values.view(np.uint32) >> 16).astype(mx.uint16).view(mx.bfloat16)
     flag = source_arithmetic.operand_flags(operand, mx.ones((8,), dtype=mx.bfloat16))
     assert flag.item() == special
+
+
+def test_native_projection_batches_preserve_partitioned_outputs() -> None:
+    _require_metal()
+    from mlx_reason_ct import source_arithmetic
+
+    mx = source_arithmetic.mx
+    rng = np.random.default_rng(23)
+    m, n, k = 513, 530, 192
+    x = mx.array(rng.normal(size=(1, m, k)).astype(np.float32))
+    weight = mx.array(rng.normal(size=(n, k)).astype(np.float32)).astype(mx.bfloat16)
+    bias = mx.array(rng.normal(size=(n,)).astype(np.float32))
+    # One unbatched reference launch per source partition checks the wrapper's
+    # row slicing, ragged final batch, bias and inter-partition BF16 stores.
+    reference = mx.zeros((1, m, n), dtype=mx.float32)
+    for offset in range(0, k, 64):
+        reference = source_arithmetic.kernel("projection")(
+            inputs=[x, weight, reference, bias, mx.array([1], dtype=mx.uint32)],
+            template=[
+                ("M", m),
+                ("N", n),
+                ("K", 64),
+                ("Ldx", k),
+                ("Ldw", k),
+                ("KOffset", offset),
+                ("Rows", 1),
+                ("Sliced", True),
+                ("HasC", offset > 0),
+                ("HasBias", True),
+            ],
+            grid=(m * n, 1, 1),
+            threadgroup=(128, 1, 1),
+            output_shapes=[(1, m, n)],
+            output_dtypes=[mx.float32],
+        )[0]
+    actual = source_arithmetic.projection(x, weight, bias=bias, slices=3, sliced=True)
+    np.testing.assert_array_equal(
+        cast(FloatArray, np.array(actual.astype(mx.float32))).view(np.uint32),
+        cast(FloatArray, np.array(reference.astype(mx.bfloat16).astype(mx.float32))).view(
+            np.uint32
+        ),
+    )
+
+
+def test_native_attention_k8_preserves_reference_carries() -> None:
+    _require_metal()
+    from mlx_reason_ct import source_arithmetic
+
+    mx = source_arithmetic.mx
+    specs = cast(
+        dict[str, KernelSpec], json.loads((source_arithmetic.ASSETS / "kernels.json").read_text())
+    )
+    rng = np.random.default_rng(31)
+    count = 4096
+    operands = rng.normal(size=(2, count, 8)) * np.exp2(rng.integers(-126, 127, (2, count, 8)))
+    # Attention consumes BF16 operands, including probabilities constructed in
+    # the kernel. Truncating the host bits retains BF16 subnormals on upload.
+    rounded = operands.astype(np.float32).view(np.uint32) & np.uint32(0xFFFF0000)
+    x, weight = rounded.view(np.float32)
+    carry = (rng.normal(size=count) * np.exp2(rng.integers(-126, 127, count))).astype(np.float32)
+    x[:8], weight[:8], carry[:8] = 0, 0, 0
+    carry[0], x[0, :3], weight[0, :3] = 1, 2**-12, 2**-12
+    carry[1] = np.nextafter(np.float32(-(2**-100)), np.float32(0))
+    x[1, 0], weight[1, 0] = 2**-50, 2**-50
+    x[2], weight[2] = 2**63, 2**62
+    x[3, 0], weight[3, 0] = np.inf, 2**-100
+    x[4, 0], weight[4, 0] = np.nan, 2**-100
+    x[5, 0], weight[5, 0] = 2**-133, 2**100
+    # A normal carry exposes a missed subnormal guard inside the fast window.
+    carry[5] = 2**-100
+    carry[6] = -np.inf
+    carry[7] = np.nan
+    outputs: list[FloatArray] = []
+    # Projection retains the original bit-shift block as its production slow
+    # path. Compare that independent implementation with attention's local guard.
+    for owner in ("projection", "attention"):
+        block = mx.fast.metal_kernel(
+            name="test_k8_" + owner,
+            input_names=["X", "W", "C"],
+            output_names=["Y"],
+            header=specs[owner]["header"],
+            source="""
+                uint row = thread_position_in_grid.x;
+                if (row >= Count) return;
+                float x[8], w[8];
+                for (int k = 0; k < 8; ++k) {
+                    x[k] = X[row * 8 + k]; w[k] = W[row * 8 + k];
+                }
+                Y[row] = nv_block(C[row], x, w);
+            """,
+        )
+        value = block(
+            inputs=[mx.array(x), mx.array(weight), mx.array(carry)],
+            template=[("Count", count)],
+            grid=(count, 1, 1),
+            threadgroup=(128, 1, 1),
+            output_shapes=[(count,)],
+            output_dtypes=[mx.float32],
+        )[0]
+        outputs.append(cast(FloatArray, np.array(value)))
+    np.testing.assert_array_equal(outputs[0].view(np.uint32), outputs[1].view(np.uint32))
+    # Analytic anchors distinguish truncated carries from ordinary RNE sums,
+    # cancellation at the lower fast-window edge, and overflow at the upper edge.
+    np.testing.assert_array_equal(outputs[1][:3], [1 + 2**-23, 2**-124, np.inf])
 
 
 def _cache_model(

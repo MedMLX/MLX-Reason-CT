@@ -21,7 +21,7 @@ Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
 Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
 Metal is unavailable.
 
-`v0.2.2` uses the public Apache-2.0 `medmlx-core@v0.1.2` runtime.
+`v0.2.3` uses the public Apache-2.0 `medmlx-core==0.1.2` runtime from PyPI.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
@@ -29,8 +29,7 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-uv tool install --python 3.12 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.2/mlx_reason_ct-0.2.2-py3-none-any.whl
+uv tool install --python 3.12 mlx-reason-ct==0.2.3
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -54,13 +53,15 @@ mlx-reason-ct report \
 
 To ask a question about the CT, set `--prompt` to your question.
 
-For an existing Python 3.12 environment, install the same wheel with `pip install`.
+For an existing Python 3.12 environment, use `pip install mlx-reason-ct==0.2.3`.
+Wheel and source archives are also available in the
+[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.2.3).
 For source development, clone [this repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use
 `uv run mlx-reason-ct` for the commands above.
 
 For a generated input with no patient data, follow the
-[synthetic CT walkthrough](docs/synthetic-walkthrough.md). It covers installation,
+[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/synthetic-walkthrough.md). It covers installation,
 bundle verification, input generation and completion checks.
 
 ## Python
@@ -75,7 +76,7 @@ print(result["outputs"]["report"])
 Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`,
 `precision`, `overwrite`). The model is also discoverable by
 [medmlx-mcp](https://github.com/MedMLX/medmlx-mcp) as `mlx-reason-ct`. Full runner
-contract in [docs/usage.md](docs/usage.md#medmlx-runner).
+contract in [docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/usage.md#medmlx-runner).
 
 ## Input and output
 
@@ -96,9 +97,15 @@ Each run writes:
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining. Implementation and verification
-details are in [docs](docs/usage.md). Seeded test references are recorded on
-darwin-arm64; [verification scope](docs/verification.md) explains their bounds
+details are in [docs](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/usage.md). Seeded test references are recorded on
+darwin-arm64; [verification scope](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/verification.md) explains their bounds
 and what they do not establish.
+
+Version 0.2.3 includes faster source-BF16 projection and attention kernels.
+On one M1 Max synthetic case, cached full-model time fell from 17:54 in the
+preceding source build to 14:49, with bitwise-unchanged recorded outputs.
+Full BF16 qualification remains incomplete; see the
+[benchmark and limits](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/verification.md#source-bf16-optimization-measurement-2026-10-09).
 
 ## Intended use
 

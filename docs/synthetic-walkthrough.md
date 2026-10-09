@@ -15,8 +15,7 @@ Allow disk space for both the download cache and local bundle.
 Run these commands in a new working directory:
 
 ```bash
-uv tool install --python 3.12 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.2/mlx_reason_ct-0.2.2-py3-none-any.whl
+uv tool install --python 3.12 mlx-reason-ct==0.2.3
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -27,7 +26,7 @@ mlx-reason-ct verify --model-dir models
 
 If `uv` reports that its executable directory is missing from `PATH`, run
 `uv tool update-shell` and open a new terminal before invoking `mlx-reason-ct`.
-The public `medmlx-core@v0.1.2` dependency installs with the wheel.
+The public `medmlx-core==0.1.2` dependency installs from PyPI with the package.
 
 Verification prints JSON containing `"verified": true`, `"dtype": "float32"`,
 `"shards": 35` and source revision

@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mlx-reason-ct"
-version = "0.2.2"
+version = "0.2.3"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -14,7 +14,7 @@ authors = [{name = "Joseph Sandoval"}]
 classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
-  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@v0.1.2",
+  "medmlx-core==0.1.2",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",
@@ -46,9 +46,6 @@ packages = ["src/mlx_reason_ct"]
 
 [tool.hatch.build.targets.wheel.force-include]
 "SOURCE.md" = "mlx_reason_ct/SOURCE.md"
-
-[tool.hatch.metadata]
-allow-direct-references = true
 
 [tool.uv]
 environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
