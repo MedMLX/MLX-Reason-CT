@@ -29,7 +29,7 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
-MANIFEST_SHA256 = "81e0e6b139d715e6b8139521fac3d6e13a956bb93d4902db96ef5d3c53bcc784"
+MANIFEST_SHA256 = "cd235f8a6c4be5ff1fb2cd60bc4237ab3de42d791c05070aa8d8d6a4ed201526"
 OBSERVED_LANES = {
     (2560, 32): 32,
     (2560, 1024): 16,
@@ -99,6 +99,7 @@ def kernel(name: str) -> MetalKernel:
         output_names=value["outputs"],
         header=value["header"],
         source=value["source"],
+        atomic_outputs=value.get("atomic_outputs", False),
     )
 
 
@@ -197,33 +198,67 @@ def sum_product(product: Array) -> Array:
     )[0]
 
 
+def _operand(values: Array) -> Array:
+    # Widening to FP32 is exact; BF16 and FP32 operands are read in place.
+    return values if values.dtype in (mx.bfloat16, mx.float32) else values.astype(mx.float32)
+
+
+def operand_flags(*operands: Array) -> Array:
+    flags = [
+        kernel("operand_check")(
+            inputs=[values],
+            template=[("Count", values.size)],
+            grid=(values.size, 1, 1),
+            threadgroup=(256, 1, 1),
+            output_shapes=[(1,)],
+            output_dtypes=[mx.uint32],
+            init_value=0,
+        )[0]
+        for values in operands
+    ]
+    return flags[0] | flags[1]
+
+
 def projection(
     x: Array, weight: Array, *, bias: Array | None = None, slices: int = 1, sliced: bool = False
 ) -> Array:
     """Measured K8 HMMA carries and source BF16 epilogue/partition stores."""
+    x, weight = _operand(x), _operand(weight)
+    length, width = x.shape[-1], weight.shape[0]
+    part_width = length // slices
+    if part_width * slices != length or part_width % (64 if sliced else 8):
+        raise ValueError("Source projection width does not match its K8 partition")
+    special = operand_flags(x, weight)
+    zero = mx.zeros((1,), dtype=mx.float32)
     parts: list[Array] = []
     for start in range(0, x.shape[1], 128):
         part = x[:, start : start + 128]
-        part_width = part.shape[-1] // slices
-        width, rows = weight.shape[0], part.size // part.shape[-1]
+        rows = part.size // length
+        # More rows per thread reuse each weight block; small grids keep one.
+        per_thread = 4 if rows * width >= 262144 else 2 if rows * width >= 65536 else 1
         value = mx.zeros((*part.shape[:-1], width), dtype=mx.float32)
-        zero = mx.zeros((1,), dtype=mx.float32)
-        for first in range(0, part.shape[-1], part_width):
-            value = kernel("sliced_projection" if sliced else "projection")(
+        for first in range(0, length, part_width):
+            value = kernel("projection")(
                 inputs=[
-                    part[..., first : first + part_width].astype(mx.float32),
-                    weight[:, first : first + part_width].astype(mx.float32),
+                    part,
+                    weight,
                     value,
                     zero if bias is None else bias.astype(mx.float32),
+                    special,
                 ],
                 template=[
                     ("M", rows),
                     ("N", width),
                     ("K", part_width),
+                    ("Ldx", length),
+                    ("Ldw", length),
+                    ("KOffset", first),
+                    ("Rows", per_thread),
+                    ("Sliced", sliced),
                     ("HasC", first > 0),
                     ("HasBias", bias is not None),
                 ],
-                grid=(rows * width, 1, 1),
+                grid=(-(-rows // per_thread) * width, 1, 1),
                 threadgroup=(128, 1, 1),
                 output_shapes=[(*part.shape[:-1], width)],
                 output_dtypes=[mx.float32],

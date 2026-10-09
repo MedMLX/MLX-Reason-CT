@@ -13,6 +13,10 @@ tags:
 - ct
 - medical-imaging
 - nv-reason-ct
+- 3d-vlm
+- vision-language
+- radiology
+- report-generation
 ---
 
 # MLX-Reason-CT
@@ -40,6 +44,10 @@ Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly whe
 Metal is unavailable.
 
 `v0.2.2` uses the public Apache-2.0 `medmlx-core@v0.1.2` runtime.
+
+**Installation status:** `v0.2.1` depends on the currently private
+[medmlx-core](https://github.com/MedMLX/medmlx-core) repository. Installation
+requires GitHub access to that dependency.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.

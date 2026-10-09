@@ -59,6 +59,17 @@ platform-keyed test fixtures. They contain no learned parameters or case-specifi
 neural outputs. Their source operation order and rounding behavior are part of
 the model's arithmetic contract.
 
+The source-BF16 projection kernel keeps each output's K8 block order, carry
+truncation, slice stores and BF16 epilogue. Its execution reads BF16 or FP32
+operands in place and computes up to four rows per thread. With no inf, NaN or
+subnormal operands, the K8 exponent maximum is computed from operand powers and
+alignment is computed as `trunc(v * 2^-common)` inside a [2^-100, 2^125] window.
+Blocks outside the window, and projections with such operands, use the
+unchanged reference block. The fast path is bitwise identical to the previous
+kernel on seeded wide-exponent, cancellation, inf/NaN/subnormal, ragged-row,
+bias and sliced cases. On one M1 Max it was 1.6-3.8 times faster for 1024-row
+decoder projections. This timing is not full-model qualification.
+
 ## Current test references
 
 Tests use one reference recorded on darwin-arm64 by

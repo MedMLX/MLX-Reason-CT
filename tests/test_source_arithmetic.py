@@ -370,6 +370,80 @@ def test_native_projection_respects_profile_operands_and_output_dtype(
     )
 
 
+@pytest.mark.parametrize("rows,sliced", [(1, False), (2, False), (4, False), (4, True)])
+@pytest.mark.parametrize("activation", ["bfloat16", "float32"])
+def test_native_projection_fast_alignment_matches_reference_blocks(
+    rows: int, sliced: bool, activation: str
+) -> None:
+    _require_metal()
+    from mlx_reason_ct import source_arithmetic
+
+    mx = source_arithmetic.mx
+    rng = np.random.default_rng(5)
+
+    def operand(shape: tuple[int, ...]) -> Array:
+        # Wide exponents, zeros and coarse values reach both sides of the fast
+        # alignment window, truncation carries and exact cancellation.
+        values = rng.normal(size=shape) * np.exp2(rng.integers(-64, 64, size=shape))
+        values[rng.random(shape) < 0.1] = 0
+        coarse = rng.random(shape) < 0.3
+        values[coarse] = np.round(values[coarse] * 4) / 4
+        return mx.array(values.astype(np.float32))
+
+    m, n, k = 37, 70, 192
+    x = operand((m, k)).astype(mx.bfloat16 if activation == "bfloat16" else mx.float32)
+    weight = operand((n, k)).astype(mx.bfloat16)
+    carry, bias = operand((m, n)), operand((n,))
+    outputs: list[Array] = []
+    for reference in (0, 1):
+        outputs.append(
+            source_arithmetic.kernel("projection")(
+                inputs=[x, weight, carry, bias, mx.array([reference], dtype=mx.uint32)],
+                template=[
+                    ("M", m),
+                    ("N", n),
+                    ("K", k),
+                    ("Ldx", k),
+                    ("Ldw", k),
+                    ("KOffset", 0),
+                    ("Rows", rows),
+                    ("Sliced", sliced),
+                    ("HasC", True),
+                    ("HasBias", True),
+                ],
+                grid=(-(-m // rows) * n, 1, 1),
+                threadgroup=(128, 1, 1),
+                output_shapes=[(m, n)],
+                output_dtypes=[mx.float32],
+            )[0]
+        )
+    fast, reference_blocks = (
+        cast(FloatArray, np.array(value)).view(np.uint32) for value in outputs
+    )
+    np.testing.assert_array_equal(fast, reference_blocks)
+
+
+@pytest.mark.parametrize("dtype", ["bfloat16", "float32"])
+@pytest.mark.parametrize(
+    "value,special", [(1.5, 0), (0.0, 0), (1e-40, 1), (np.inf, 1), (np.nan, 1)]
+)
+def test_native_projection_flags_operands_outside_fast_alignment(
+    dtype: str, value: float, special: int
+) -> None:
+    _require_metal()
+    from mlx_reason_ct import source_arithmetic
+
+    mx = source_arithmetic.mx
+    values = np.ones(64, dtype=np.float32)
+    values[17] = value
+    operand = mx.array(values)
+    if dtype == "bfloat16":
+        # 1e-40 remains subnormal in BF16 after the exact FP32 truncation below.
+        operand = mx.array(values.view(np.uint32) >> 16).astype(mx.uint16).view(mx.bfloat16)
+    flag = source_arithmetic.operand_flags(operand, mx.ones((8,), dtype=mx.bfloat16))
+    assert flag.item() == special
+
+
 def _cache_model(
     case: CacheReference,
     precision: str,
