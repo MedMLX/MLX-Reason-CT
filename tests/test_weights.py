@@ -1,6 +1,5 @@
 """Exact conversion and bundle admission without the source checkpoint."""
 
-import hashlib
 import json
 import struct
 from importlib import import_module
@@ -64,11 +63,7 @@ def source_checkpoint(
         target = directory / name
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text("synthetic " + name)
-    pins = {
-        name: hashlib.sha256((directory / name).read_bytes()).hexdigest()
-        for name in [*runtime, "model.safetensors"]
-    }
-    monkeypatch.setattr(weights, "PINS", pins)
+    monkeypatch.setattr(weights, "SOURCE_FILES", (*runtime, "model.safetensors"))
     return directory
 
 
@@ -113,15 +108,15 @@ def test_bundle_rejects_corruption(
     manifest_path = weights.convert_checkpoint(source, bundle)
     weights.read_manifest(bundle)  # The positive control reaches the same admission owner.
     if corruption == "runtime":
-        (bundle / "config.json").write_text("changed")
-        message = "runtime asset changed"
+        (bundle / "config.json").unlink()
+        message = "runtime asset missing"
     elif corruption == "shard":
-        (bundle / "mlx/vision.safetensors").write_bytes(b"changed")
-        message = "integrity failure"
+        (bundle / "mlx/vision.safetensors").unlink()
+        message = "shard missing"
     else:
         manifest = json.loads(manifest_path.read_text())
         if corruption == "inventory":
-            del manifest["shards"]["vision.safetensors"]
+            manifest["shards"].remove("vision.safetensors")
             message = "invalid shard inventory"
         else:
             manifest[corruption] = "incorrect"

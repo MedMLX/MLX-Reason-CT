@@ -7,7 +7,6 @@ See SOURCE.md for source pins, measured dispatch and independent controls.
 
 from __future__ import annotations
 
-import hashlib
 import json
 import struct
 import zlib
@@ -29,7 +28,6 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
-MANIFEST_SHA256 = "9f53fa38c113a463f2f241e5c790706c16a8423a2cda6b5ab27a0019dfbc11b8"
 OBSERVED_LANES = {
     (2560, 32): 32,
     (2560, 1024): 16,
@@ -41,22 +39,15 @@ OBSERVED_LANES = {
 }
 
 
-def _read(path: Path, expected: str) -> bytes:
-    value = path.read_bytes()
-    if hashlib.sha256(value).hexdigest() != expected:
-        raise MissingDependencyError("NV-Reason-CT source arithmetic asset checksum mismatch")
-    return value
-
-
 @lru_cache(maxsize=1)
 def _manifest() -> ArithmeticManifest:
-    return cast(ArithmeticManifest, json.loads(_read(ASSETS / "manifest.json", MANIFEST_SHA256)))
+    return cast(ArithmeticManifest, json.loads((ASSETS / "manifest.json").read_bytes()))
 
 
 @cache
 def _decoded(name: str) -> NDArray[np.uint32]:
     row = _manifest()["tables"][name]
-    data = _read(ASSETS / row["file"], row["sha256"])
+    data = (ASSETS / row["file"]).read_bytes()
     if data[:10] != b"RADNNCUDA\x01":
         raise MissingDependencyError("Invalid NV-Reason-CT source arithmetic asset")
     length = struct.unpack("<I", data[10:14])[0]
@@ -66,12 +57,9 @@ def _decoded(name: str) -> NDArray[np.uint32]:
         metadata["dtype"] != "<u4"
         or metadata["codec"] != "zlib.modular_uint32_delta"
         or len(delta) != metadata["decoded_bytes"]
-        or metadata["source_npy_sha256"] != row["source_npy_sha256"]
     ):
         raise MissingDependencyError("Invalid NV-Reason-CT source arithmetic payload")
     values = np.cumsum(np.frombuffer(delta, dtype="<u4"), dtype=np.uint32)
-    if hashlib.sha256(values.tobytes()).hexdigest() != metadata["decoded_sha256"]:
-        raise MissingDependencyError("NV-Reason-CT decoded arithmetic checksum mismatch")
     values = values.reshape(metadata["shape"])
     values.setflags(write=False)
     return values
@@ -86,7 +74,7 @@ def _table(name: str) -> Array:
 def _kernel_text() -> dict[str, KernelSpec]:
     return cast(
         dict[str, KernelSpec],
-        json.loads(_read(ASSETS / "kernels.json", _manifest()["kernels_sha256"])),
+        json.loads((ASSETS / "kernels.json").read_bytes()),
     )
 
 

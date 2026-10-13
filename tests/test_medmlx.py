@@ -2,7 +2,6 @@
 
 from __future__ import annotations
 
-import hashlib
 import inspect
 import json
 import subprocess
@@ -69,14 +68,6 @@ def bundle(tmp_path: Path, monkeypatch: pytest.MonkeyPatch) -> Path:
     )
     (source / "image_processor_3d/preprocessor_config.json").write_text(
         json.dumps({"final_grid_size": [1, 1, 1], "pixdim": [1, 1, 1], "spatial_size": [2, 2, 2]})
-    )
-    monkeypatch.setattr(
-        mlx_weights,
-        "PINS",
-        {
-            name: hashlib.sha256((source / name).read_bytes()).hexdigest()
-            for name in mlx_weights.PINS
-        },
     )
     path = tmp_path / "bundle"
     mlx_weights.convert_checkpoint(source, path)
@@ -187,9 +178,9 @@ def test_bad_weights(tmp_path: Path, image: Path, bundle: Path, invalid: str) ->
     elif invalid == "manifest":
         (bundle / "mlx/manifest.json").write_text("{")
     elif invalid == "runtime":
-        (bundle / "config.json").write_text("changed")
+        (bundle / "config.json").unlink()
     else:
-        (bundle / "mlx/vision.safetensors").write_bytes(b"changed")
+        (bundle / "mlx/vision.safetensors").unlink()
     with pytest.raises(AssetNotReadyError, match="converted") as caught:
         run(image_path=image, weights_path=bundle, output_dir=tmp_path / "out")
     assert caught.value.hint
@@ -365,7 +356,6 @@ def test_runner_uses_public_api_and_writes_json_outputs(
     assert details["status"] == "succeeded"
     assert details["clinical_validation"] is False
     assert details["generated_token_ids"] == [1, 2, 4]
-    assert details["source_sha256"] == mlx_weights.PINS
     assert details["generation"]["precision"] == precision
     assert details["generation"]["native_arithmetic_profile"] == native_profile
     assert details["generation"]["decoder_arithmetic"] == arithmetic

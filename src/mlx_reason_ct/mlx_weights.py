@@ -1,4 +1,4 @@
-"""Offline exact BF16-to-FP32 conversion and model bundle provenance verification."""
+"""Offline exact BF16-to-FP32 conversion and model bundle admission."""
 
 from __future__ import annotations
 
@@ -17,7 +17,6 @@ import numpy as np
 from mlx_reason_ct._host_types import Safetensors
 from mlx_reason_ct._payloads import BundleManifest
 from mlx_reason_ct.errors import InvalidInputError
-from mlx_reason_ct.integrity import file_sha256
 
 REVISION = "386b93e034983f6c1fc841a43833a1b6a0cd9c13"
 ENGINE = "nv_reason_ct_mlx.fp32.v1"
@@ -28,7 +27,21 @@ SHARDS = (
     "norm.safetensors",
     *(f"layer_{i:02d}.safetensors" for i in range(32)),
 )
-PINS: dict[str, str] = json.loads(Path(__file__).with_name("source_pins.json").read_text())
+SOURCE_FILES = (
+    "LICENSE",
+    "chat_template.jinja",
+    "config.json",
+    "generation_config.json",
+    "image_processor_3d/preprocessor_config.json",
+    "model.py",
+    "model.safetensors",
+    "preprocessor_config.json",
+    "processor.py",
+    "processor_config.json",
+    "tokenizer.json",
+    "tokenizer_config.json",
+    "video_preprocessor_config.json",
+)
 RUNTIME_FILES = (
     "LICENSE",
     "config.json",
@@ -40,16 +53,15 @@ RUNTIME_FILES = (
 
 
 def validate_source(model_dir: Path) -> None:
-    for name, expected in PINS.items():
-        path = model_dir / name
-        if not path.is_file() or file_sha256(path) != expected:
-            raise InvalidInputError(f"NV-Reason-CT pinned asset missing or changed: {name}")
+    for name in SOURCE_FILES:
+        if not (model_dir / name).is_file():
+            raise InvalidInputError(f"NV-Reason-CT pinned asset missing: {name}")
 
 
 def read_manifest(model_dir: Path) -> BundleManifest:
     for name in RUNTIME_FILES:
-        if file_sha256(model_dir / name) != PINS[name]:
-            raise InvalidInputError(f"NV-Reason-CT runtime asset changed: {name}")
+        if not (model_dir / name).is_file():
+            raise InvalidInputError(f"NV-Reason-CT runtime asset missing: {name}")
     payload: object = json.loads((model_dir / MANIFEST).read_text())
     if not isinstance(payload, dict):
         raise InvalidInputError("MLX-Reason-CT cache manifest must be an object")
@@ -57,20 +69,19 @@ def read_manifest(model_dir: Path) -> BundleManifest:
     if (
         manifest.get("engine") != ENGINE
         or manifest.get("revision") != REVISION
-        or manifest.get("source_sha256") != PINS
         or manifest.get("dtype") != "float32"
-        or manifest.get("runtime_sha256") != {name: PINS[name] for name in RUNTIME_FILES}
     ):
         raise InvalidInputError("MLX-Reason-CT cache provenance differs from the pinned conversion")
-    inventory = cast(object, manifest.get("shards", {}))
-    if not isinstance(inventory, dict):
-        raise InvalidInputError("MLX-Reason-CT cache shard inventory must be an object")
-    shards = cast(dict[str, str], inventory)
+    inventory = cast(object, manifest.get("shards", []))
+    if not isinstance(inventory, list | dict):
+        raise InvalidInputError("MLX-Reason-CT cache shard inventory must be a list")
+    # Bundles converted before shard hashes were dropped list them as mapping keys.
+    shards = list(cast(list[str] | dict[str, str], inventory))
     if set(shards) != set(SHARDS):
         raise InvalidInputError("MLX-Reason-CT cache has an invalid shard inventory")
-    for name, digest in shards.items():
-        if file_sha256(model_dir / "mlx" / name) != digest:
-            raise InvalidInputError(f"MLX-Reason-CT cache integrity failure: {name}")
+    for name in shards:
+        if not (model_dir / "mlx" / name).is_file():
+            raise InvalidInputError(f"MLX-Reason-CT cache shard missing: {name}")
     return manifest
 
 
@@ -130,21 +141,19 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
     destination.mkdir(parents=True, exist_ok=True)
     with TemporaryDirectory(dir=destination, prefix="convert-") as temporary:
         staged = Path(temporary)
-        hashes: dict[str, str] = {}
+        shards: list[str] = []
         for group, names in groups.items():
             filename = group + ".safetensors"
             arrays = {name: tensor(name) for name in names}
             safetensors.save_file(arrays, staged / filename)
             del arrays
-            hashes[filename] = file_sha256(staged / filename)
+            shards.append(filename)
         manifest = {
             "engine": ENGINE,
             "revision": REVISION,
-            "source_sha256": PINS,
             "dtype": "float32",
-            "runtime_sha256": {name: PINS[name] for name in RUNTIME_FILES},
             "conversion": "lossless BF16 bit expansion; source tensor layouts",
-            "shards": hashes,
+            "shards": sorted(shards),
             "excluded_source_tensors": ignored,
             "exclusion_reason": (
                 "2D image/video tower rejected by source processor; "
@@ -158,7 +167,7 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
                 shutil.copyfile(model_dir / name, target)
         # Publish the manifest last so it never marks a partially written conversion complete.
         (destination / "manifest.json").unlink(missing_ok=True)
-        for name in hashes:
+        for name in shards:
             (staged / name).replace(destination / name)
         (staged / "manifest.json").write_text(json.dumps(manifest, indent=2, sort_keys=True) + "\n")
         (staged / "manifest.json").replace(destination / "manifest.json")

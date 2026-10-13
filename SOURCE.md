@@ -9,7 +9,6 @@ stages, not inference backends.
 
 [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT/tree/386b93e034983f6c1fc841a43833a1b6a0cd9c13)
 (OpenMDW-1.1) supplies the model, processor, tokenizer, template and configurations.
-The converted manifest binds source weights and staged runtime-file hashes.
 The staged upstream LICENSE is required. BF16 source parameters expand losslessly
 to FP32 in the converted bundle; there is no retraining.
 
@@ -35,10 +34,7 @@ on the same Metal backend.
 ## Metal recurrence
 
 The recurrent kernels derive from MLX-LM 0.32.0
-`mlx_lm/models/gated_delta.py` (MIT, Copyright Apple). The original file hash was
-`f69e837ea68641dbb06fdb5dcc024a9a7e1d9353f08ae58c05275253a0c39428`.
-The adapted file hash is
-`3a4c89d96ef40829423cf0eb0eed37420c3bd5256b675e5d99bb2cd797e874d7`.
+`mlx_lm/models/gated_delta.py` (MIT, Copyright Apple).
 
 MLX loads through the shared runtime before the recurrent kernels. The adapted
 implementation retains the Metal kernel bodies and dispatch, with no host
@@ -52,7 +48,7 @@ provenance includes PyTorch 2.13.0 revision
 `6c4f74fb338e0c3cdb07ac6f5eab5f54fc367c15`, and MLX 0.32.2 layout helpers.
 MIT/BSD notices remain in `src/mlx_reason_ct/licenses/`.
 
-`source_arithmetic_assets` contains hash-bound Metal kernels and losslessly
+`source_arithmetic_assets` contains Metal kernels and losslessly
 encoded, model-independent unary/rotary constants. Their original encoding and
 source provenance are retained; they are not selectable execution backends or
 platform-keyed test fixtures. They contain no learned parameters or case-specific

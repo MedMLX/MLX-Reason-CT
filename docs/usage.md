@@ -115,9 +115,9 @@ uv run mlx-reason-ct convert --source-dir /path/to/upstream --output-dir models
 
 Conversion requires the complete pinned upstream snapshot at revision
 `386b93e034983f6c1fc841a43833a1b6a0cd9c13`. It expands BF16 bit patterns to FP32
-without retraining, rejects changed source assets and validates tied weights.
+without retraining, rejects missing source assets and validates tied weights.
 The disconnected 2D tower, unused mask token and duplicate LM head are excluded.
-The converted bundle verifies runtime metadata and all 35 shard hashes.
+The converted bundle verifies runtime metadata and all 35 shards.
 
 The published model bundle contains:
 

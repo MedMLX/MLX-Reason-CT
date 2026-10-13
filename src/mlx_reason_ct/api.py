@@ -242,7 +242,6 @@ def generate_report(
         "source": str(Path(source)),
         "model_revision": manifest["revision"],
         "bundle_engine": manifest["engine"],
-        "source_sha256": manifest["source_sha256"],
         "generation": metrics,
         "ct_geometry": crop.geometry(),
         "generated_token_ids": tokens,
