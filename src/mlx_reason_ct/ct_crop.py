@@ -139,16 +139,30 @@ def lung_air_bounds(
 
 def anatomy_crop(
     values: np.ndarray,
-    region: str,
+    region: str | None,
     roi: tuple[int, int, int],
     *,
     spacing: tuple[float, float, float],
 ) -> tuple[tuple[int, ...], tuple[int, int] | None]:
-    """Choose the pinned chest/abdomen crop in an already padded LPS HU array."""
-    if region not in {"chest", "abdomen"}:
-        raise ValueError("anatomy_region must be 'chest' or 'abdomen'")
+    """Choose the pinned chest/abdomen crop, or a plain centered crop, in an
+    already padded LPS HU array.
+
+    ``region=None`` matches the pinned processor's own fallback when no
+    anatomy region is requested: a centered crop on every axis, with no lung
+    detection and no fallback warning (``AnatomySpatialCropd`` defers to plain
+    ``CenterSpatialCropd`` in that case).
+    """
+    if region is not None and region not in {"chest", "abdomen"}:
+        raise ValueError("anatomy_region must be None, 'chest', or 'abdomen'")
     if any(n < r for n, r in zip(values.shape, roi, strict=True)):
         raise ValueError("Anatomy crop requires padding to at least the ROI size")
+    centers = [(values.shape[i] - 1) / 2 for i in range(3)]
+    if region is None:
+        start = [
+            max(0, min(int(round(c - r / 2)), n - r))
+            for c, r, n in zip(centers, roi, values.shape, strict=True)
+        ]
+        return tuple(start), None
     lungs = lung_air_bounds(values, spacing=spacing)
     bounds = None
     if lungs is not None:
@@ -160,7 +174,6 @@ def anatomy_crop(
             low = max(body_low, high - int(np.ceil(300 / spacing[2])) + 1)
             if low <= high:
                 bounds = (low, high)
-    centers = [(values.shape[i] - 1) / 2 for i in range(3)]
     if bounds is not None:
         centers[2] = (bounds[0] + bounds[1]) / 2
     start = [
@@ -179,7 +192,7 @@ def anatomy_crop(
 
 def load_anatomy_ct(
     path: Path,
-    region: str,
+    region: str | None,
     *,
     spacing: tuple[float, float, float] = (2.0, 2.0, 2.0),
     roi: tuple[int, int, int] = (192, 192, 192),

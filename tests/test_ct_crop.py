@@ -87,3 +87,23 @@ def test_enclosed_air_selects_chest_and_abdomen_without_bowel_shift(
     values = np.where(bowel & (z > 15) & (z < 60), -800.0, values)
     actual = anatomy_crop(values, region, (96, 96, 192), spacing=(2.0, 2.0, 2.0))
     assert actual == (start, bounds)
+
+
+def test_region_none_takes_a_plain_centered_crop_with_no_warning(
+    recwarn: pytest.WarningsRecorder,
+) -> None:
+    # Same geometry as the chest/abdomen case above: region=None must skip lung
+    # detection entirely (pinned upstream defers to plain CenterSpatialCropd),
+    # landing on the geometric center of every axis with no fallback warning.
+    x, y, _ = np.ogrid[:100, :100, :300]
+    body = ((x - 50) / 45) ** 2 + ((y - 50) / 45) ** 2 < 1
+    values = np.broadcast_to(np.where(body, 40.0, -1000.0), (100, 100, 300)).copy()
+    start, bounds = anatomy_crop(values, None, (96, 96, 192), spacing=(2.0, 2.0, 2.0))
+    assert start == (2, 2, 54)
+    assert bounds is None
+    assert not recwarn.list
+
+
+def test_anatomy_crop_rejects_unknown_region() -> None:
+    with pytest.raises(ValueError, match="None, 'chest', or 'abdomen'"):
+        anatomy_crop(np.zeros((4, 4, 4)), "brain", (2, 2, 2), spacing=(2.0, 2.0, 2.0))

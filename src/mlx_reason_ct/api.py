@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from pathlib import Path
 from time import perf_counter
 from typing import TYPE_CHECKING, cast
@@ -52,21 +53,26 @@ def _load_model(model_dir: Path, *, precision: str) -> NativeModel:
 
 def _validate_generation_options(
     prompt: str | None,
-    anatomy_region: str,
+    anatomy_region: str | None,
     enable_thinking: bool,
     max_new_tokens: int,
     overwrite: bool,
     precision: str,
-) -> str:
+    history: Sequence[tuple[str, str]] | None,
+) -> tuple[str, tuple[tuple[str, str], ...]]:
     if not isinstance(cast(object, precision), str) or precision not in PRECISION_PROFILES:
         raise InvalidInputError(
             "Unsupported NV-Reason-CT MLX precision profile; "
             "choose float32, bfloat16 or bfloat16_fp32."
         )
-    if anatomy_region not in {"chest", "abdomen"}:
-        raise InvalidInputError("anatomy_region must be chest or abdomen")
+    if anatomy_region is not None and anatomy_region not in {"chest", "abdomen"}:
+        raise InvalidInputError("anatomy_region must be chest, abdomen, or None")
     if prompt is None:
-        prompt = f"write a structured {anatomy_region} CT report"
+        prompt = (
+            f"write a structured {anatomy_region} CT report"
+            if anatomy_region is not None
+            else "write a structured CT report"
+        )
     # Annotations do not bind callers, so validate the runtime values.
     token_limit = cast(object, max_new_tokens)
     if (
@@ -82,7 +88,42 @@ def _validate_generation_options(
         cast(object, overwrite), bool
     ):
         raise InvalidInputError("enable_thinking and overwrite must be booleans")
-    return prompt
+    resolved_history = _validate_history(history)
+    return prompt, resolved_history
+
+
+def _validate_history(
+    history: Sequence[tuple[str, str]] | None,
+) -> tuple[tuple[str, str], ...]:
+    """Validate prior ``(question, answer)`` turns for a follow-up request.
+
+    Upstream's own chat template supports replaying completed turns ahead of
+    a new question (the model card documents "follow-up questions and
+    clarification requests"); each entry here is one already-answered turn,
+    oldest first, with the CT volume attached only once, on the first turn.
+    """
+    if history is None:
+        return ()
+    turns = cast(object, history)
+    if isinstance(turns, str | bytes) or not isinstance(turns, Sequence):
+        raise InvalidInputError("history must be a sequence of (question, answer) pairs")
+    resolved: list[tuple[str, str]] = []
+    for turn in cast(Sequence[object], turns):
+        if isinstance(turn, str | bytes) or not isinstance(turn, Sequence):
+            raise InvalidInputError("Each history turn must be a (question, answer) pair")
+        values = cast(Sequence[object], turn)
+        if len(values) != 2:
+            raise InvalidInputError("Each history turn must be a (question, answer) pair")
+        question, answer = values
+        if (
+            not isinstance(question, str)
+            or not isinstance(answer, str)
+            or not question.strip()
+            or not answer.strip()
+        ):
+            raise InvalidInputError("Each history turn must hold nonempty question/answer text")
+        resolved.append((question, answer))
+    return tuple(resolved)
 
 
 def generate(
@@ -141,19 +182,26 @@ def generate_report(
     *,
     model_dir: str | Path,
     prompt: str | None = None,
-    anatomy_region: str = "chest",
+    anatomy_region: str | None = "chest",
     enable_thinking: bool = False,
     max_new_tokens: int = 512,
     precision: str = "float32",
     overwrite: bool = False,
+    history: Sequence[tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     """Run one HU NIfTI CT locally on Metal; retain partial output on truncation.
 
     Without a prompt, a structured report for ``anatomy_region`` is requested.
-    Existing report files require ``overwrite=True`` to replace.
+    ``anatomy_region`` is ``"chest"``, ``"abdomen"``, or ``None`` for the
+    pinned processor's own centered crop, used upstream when its chest/abdomen
+    heuristic is unreliable for a given geometry. ``history`` continues a
+    conversation about the same CT: a sequence of already-answered
+    ``(question, answer)`` turns, oldest first, with ``prompt``/the default
+    report request as the new, still-unanswered turn. Existing report files
+    require ``overwrite=True`` to replace.
     """
-    prompt = _validate_generation_options(
-        prompt, anatomy_region, enable_thinking, max_new_tokens, overwrite, precision
+    prompt, resolved_history = _validate_generation_options(
+        prompt, anatomy_region, enable_thinking, max_new_tokens, overwrite, precision, history
     )
     model_dir = Path(model_dir).expanduser().resolve()
     output_dir = Path(output_dir).expanduser().resolve()
@@ -161,7 +209,7 @@ def generate_report(
     files.require_writable(overwrite=overwrite)
     manifest, processor = _load_assets(model_dir)
     pixels, crop = processor.image(Path(source), anatomy_region)
-    inputs = processor.prompt(prompt, enable_thinking)
+    inputs = processor.prompt(prompt, enable_thinking, resolved_history)
     mx = import_mlx()
     started = perf_counter()
     mx.reset_peak_memory()
@@ -181,6 +229,8 @@ def generate_report(
             "decoder_arithmetic": "bfloat16" if precision == "bfloat16" else "float32",
             "native_arithmetic_profile": native_profile,
             "synchronization": "mx.eval per layer/token and mx.synchronize",
+            "anatomy_region": anatomy_region,
+            "prior_turns": len(resolved_history),
         }
     )
     files.require_writable(overwrite=overwrite)

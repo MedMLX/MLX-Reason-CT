@@ -120,12 +120,19 @@ def test_thinking_response_separates_reasoning_from_report(tmp_path: Path) -> No
         save_response(tmp_path, "Reasoning only\n</think>\n\n", metrics)
 
 
-@pytest.mark.parametrize("region", ["chest", "abdomen"])
+@pytest.mark.parametrize(
+    "region,expected_prompt",
+    [
+        ("chest", "write a structured chest CT report"),
+        ("abdomen", "write a structured abdomen CT report"),
+        (None, "write a structured CT report"),
+    ],
+)
 def test_default_prompt_requests_report_for_region(
-    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, region: str
+    tmp_path: Path, monkeypatch: pytest.MonkeyPatch, region: str | None, expected_prompt: str
 ) -> None:
     api = import_module("mlx_reason_ct.api")
-    seen: dict[str, str] = {}
+    seen: dict[str, object] = {}
 
     class StopAfterPrompt(Exception):
         pass
@@ -134,11 +141,14 @@ def test_default_prompt_requests_report_for_region(
         def __init__(self, model_dir: Path) -> None:
             pass
 
-        def image(self, source: Path, anatomy_region: str) -> tuple[None, None]:
+        def image(self, source: Path, anatomy_region: str | None) -> tuple[None, None]:
             return None, None
 
-        def prompt(self, question: str, enable_thinking: bool) -> None:
+        def prompt(
+            self, question: str, enable_thinking: bool, history: tuple[tuple[str, str], ...] = ()
+        ) -> None:
             seen["prompt"] = question
+            seen["history"] = history
             raise StopAfterPrompt
 
     def read_manifest(model_dir: Path) -> dict[str, str]:
@@ -148,4 +158,5 @@ def test_default_prompt_requests_report_for_region(
     monkeypatch.setattr(api, "Processor", FakeProcessor)
     with pytest.raises(StopAfterPrompt):
         api.generate_report("ct.nii.gz", tmp_path, model_dir=tmp_path, anatomy_region=region)
-    assert seen["prompt"] == f"write a structured {region} CT report"
+    assert seen["prompt"] == expected_prompt
+    assert seen["history"] == ()

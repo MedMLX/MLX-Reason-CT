@@ -7,6 +7,7 @@ import inspect
 import json
 import subprocess
 import sys
+from collections.abc import Sequence
 from importlib import import_module
 from importlib.metadata import distribution
 from pathlib import Path
@@ -35,10 +36,11 @@ tokenizers = cast(Tokenizers, import_module("tokenizers"))
 
 class GenerationControls(TypedDict, total=False):
     prompt: str
-    anatomy_region: str
+    anatomy_region: str | None
     enable_thinking: bool
     max_new_tokens: int
     precision: str
+    history: Sequence[tuple[str, str]] | None
 
 
 @pytest.fixture
@@ -113,6 +115,7 @@ def test_declaration_entry_point_and_signature() -> None:
         "enable_thinking",
         "max_new_tokens",
         "precision",
+        "history",
     }
 
 
@@ -228,6 +231,11 @@ def test_output_directory_and_boolean_guards(tmp_path: Path, image: Path) -> Non
         ({"enable_thinking": "yes"}, "booleans"),
         ({"precision": "float16"}, "precision profile"),
         ({"precision": {"name": "float32"}}, "precision profile"),
+        ({"history": "not a sequence"}, "history"),
+        ({"history": [("only one element",)]}, "history"),
+        ({"history": [("", "answer")]}, "history"),
+        ({"history": [("question", "")]}, "history"),
+        ({"history": [(1, "answer")]}, "history"),
     ],
 )
 def test_generation_controls(
@@ -372,6 +380,99 @@ def test_runner_uses_public_api_and_writes_json_outputs(
             max_new_tokens=16,
         )
     assert Path(outputs["report"]).read_text() == "FINDINGS: Normal.\n"
+
+
+def test_anatomy_region_none_skips_lung_detection_without_warning(
+    tmp_path: Path,
+    image: Path,
+    bundle: Path,
+    synthetic_generation: None,
+    recwarn: pytest.WarningsRecorder,
+) -> None:
+    """``anatomy_region=None`` matches the pinned processor's own centered crop
+    (no lung heuristic), unlike a requested chest/abdomen region that falls
+    back to a superior-edge crop with a warning on this tiny synthetic scan.
+    """
+    output = tmp_path / "out"
+    result = run(
+        image_path=image,
+        weights_path=bundle,
+        output_dir=output,
+        prompt="Describe CT",
+        anatomy_region=None,
+        max_new_tokens=16,
+    )
+    assert not recwarn.list
+    details = cast(dict[str, object], result["details"])
+    generation = cast(dict[str, object], details["generation"])
+    assert generation["anatomy_region"] is None
+    assert generation["prior_turns"] == 0
+
+
+def test_history_continues_a_conversation_about_the_same_ct(
+    tmp_path: Path, image: Path, bundle: Path, synthetic_generation: None
+) -> None:
+    output = tmp_path / "out"
+    with pytest.warns(RuntimeWarning, match="superior-edge"):
+        result = run(
+            image_path=image,
+            weights_path=bundle,
+            output_dir=output,
+            prompt="Any new findings?",
+            anatomy_region="abdomen",
+            max_new_tokens=16,
+            history=[("Describe CT", "FINDINGS: Normal.")],
+        )
+    details = cast(dict[str, object], result["details"])
+    generation = cast(dict[str, object], details["generation"])
+    assert generation["prior_turns"] == 1
+    loaded = {name.split(".")[0] for name in sys.modules}
+    assert not loaded & {"torch", "transformers", "monai"}, loaded
+
+
+def test_prompt_with_history_renders_one_image_marker_before_prior_turns(
+    tmp_path: Path,
+) -> None:
+    """``Processor.prompt`` replays completed turns as plain text, attaching the
+    CT volume once on the opening user turn, following the pinned chat
+    template's own multi-turn convention (reasoning is not replayed).
+    """
+    from mlx_reason_ct.processor_mlx import Processor
+
+    tokenizer = tokenizers.Tokenizer(
+        tokenizers.models.WordLevel({"[UNK]": 0, "<|image_pad|>": 1}, unk_token="[UNK]")
+    )
+    tokenizer.add_special_tokens(["<|image_pad|>"])
+    tokenizer.save(str(tmp_path / "tokenizer.json"))
+    (tmp_path / "chat_template.jinja").write_text(
+        "{% for m in messages %}"
+        "{% if m.content is string %}{{ m.role }}:{{ m.content }}|"
+        "{% else %}{% for item in m.content %}"
+        "{% if item.type == 'image' %}<|image_pad|>"
+        "{% else %}{{ m.role }}:{{ item.text }}|{% endif %}"
+        "{% endfor %}{% endif %}"
+        "{% endfor %}"
+    )
+    processor_dir = tmp_path / "image_processor_3d"
+    processor_dir.mkdir()
+    (processor_dir / "preprocessor_config.json").write_text(
+        json.dumps({"final_grid_size": [1, 1, 1], "pixdim": [1, 1, 1], "spatial_size": [2, 2, 2]})
+    )
+    processor = Processor(tmp_path)
+
+    opening_only = processor.prompt("Describe the CT.", False)
+    assert opening_only.text == "<|image_pad|>user:Describe the CT.|"
+
+    continued = processor.prompt(
+        "Is there a nodule now?",
+        False,
+        history=(("Describe the CT.", "FINDINGS: clear."),),
+    )
+    assert continued.text == (
+        "<|image_pad|>user:Describe the CT.|assistant:FINDINGS: clear.|user:Is there a nodule now?|"
+    )
+    assert continued.text.count("<|image_pad|>") == 1
+    assert int(continued.mm_token_type_ids.sum()) == 1
 
 
 def test_partial_generation_retains_failure_record(

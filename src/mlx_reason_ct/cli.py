@@ -27,7 +27,13 @@ def main() -> int:
     report.add_argument("--input", type=Path, required=True)
     report.add_argument("--model-dir", type=Path, required=True)
     report.add_argument("--output-dir", type=Path, required=True)
-    report.add_argument("--anatomy-region", choices=["chest", "abdomen"], default="chest")
+    report.add_argument(
+        "--anatomy-region",
+        choices=["chest", "abdomen", "none"],
+        default="chest",
+        help="'none' uses the pinned processor's own centered crop, with no "
+        "chest/abdomen lung detection",
+    )
     report.add_argument(
         "--prompt", help="Question or instruction (default: structured report for the region)"
     )
@@ -35,6 +41,12 @@ def main() -> int:
     report.add_argument("--max-new-tokens", type=int, default=512)
     report.add_argument("--precision", choices=tuple(PRECISION_PROFILES), default="float32")
     report.add_argument("--overwrite", action="store_true", help="Replace existing report files")
+    report.add_argument(
+        "--history",
+        type=Path,
+        help="JSON file holding a list of already-answered [question, answer] "
+        "turns, oldest first, to continue a conversation about the same CT",
+    )
     args = parser.parse_args()
     if args.command == "download":
         hub = import_module("huggingface_hub")
@@ -56,15 +68,20 @@ def main() -> int:
     elif args.command == "convert":
         print(convert_checkpoint(args.source_dir, args.output_dir))
     else:
+        history: list[tuple[str, str]] | None = None
+        if args.history is not None:
+            raw_history = json.loads(args.history.read_text())
+            history = [(str(question), str(answer)) for question, answer in raw_history]
         result = generate_report(
             args.input,
             args.output_dir,
             model_dir=args.model_dir,
             prompt=args.prompt,
-            anatomy_region=args.anatomy_region,
+            anatomy_region=None if args.anatomy_region == "none" else args.anatomy_region,
             enable_thinking=args.enable_thinking,
             max_new_tokens=args.max_new_tokens,
             precision=args.precision,
+            history=history,
             overwrite=args.overwrite,
         )
         print(json.dumps(result, indent=2))

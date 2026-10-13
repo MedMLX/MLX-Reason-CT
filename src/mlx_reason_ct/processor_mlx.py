@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+from collections.abc import Sequence
 from dataclasses import dataclass
 from importlib import import_module
 from pathlib import Path
@@ -75,17 +76,39 @@ class Processor:
             (model_dir / "chat_template.jinja").read_text()
         )
 
-    def prompt(self, question: str, enable_thinking: bool) -> VolumePrompt:
+    def prompt(
+        self,
+        question: str,
+        enable_thinking: bool,
+        history: Sequence[tuple[str, str]] = (),
+    ) -> VolumePrompt:
+        """Render one request, optionally continuing prior completed turns.
+
+        The pinned CT volume is attached once, on the first user turn. Earlier
+        completed turns in ``history`` are ``(question, answer)`` pairs; the
+        template follows upstream convention and does not replay their
+        reasoning, only each answer's final text. ``question`` is the new,
+        still-unanswered turn.
+        """
+        opening_question = history[0][0] if history else question
+        messages: list[dict[str, object]] = [
+            {
+                "role": "user",
+                "content": [
+                    {"type": "image"},
+                    {"type": "text", "text": opening_question},
+                ],
+            }
+        ]
+        if history:
+            first_answer = history[0][1]
+            messages.append({"role": "assistant", "content": first_answer})
+            for turn_question, turn_answer in history[1:]:
+                messages.append({"role": "user", "content": turn_question})
+                messages.append({"role": "assistant", "content": turn_answer})
+            messages.append({"role": "user", "content": question})
         text = self.template.render(
-            messages=[
-                {
-                    "role": "user",
-                    "content": [
-                        {"type": "image"},
-                        {"type": "text", "text": question},
-                    ],
-                }
-            ],
+            messages=messages,
             add_generation_prompt=True,
             enable_thinking=enable_thinking,
         )
@@ -106,7 +129,7 @@ class Processor:
             start,
         )
 
-    def image(self, source: Path, region: str) -> tuple[np.ndarray, CTCrop]:
+    def image(self, source: Path, region: str | None) -> tuple[np.ndarray, CTCrop]:
         crop = load_anatomy_ct(source, region, spacing=self.spacing, roi=self.shape)
         pixels = np.clip(crop.values, -1000.0, 1000.0) / np.float32(1000.0)
         return np.ascontiguousarray(pixels.transpose(2, 1, 0)[None, None]), crop

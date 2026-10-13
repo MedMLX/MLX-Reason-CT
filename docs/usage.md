@@ -6,7 +6,12 @@ installation and the report workflow using a generated geometric phantom.
 ## CT question answering
 
 Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
-`chest` (the default) or `abdomen` to match the CT.
+`chest` (the default) or `abdomen` to match the CT, or `none` for the pinned
+processor's own plain centered crop (upstream's own fallback for geometries
+where its chest/abdomen heuristic is unreliable). Pass `--history` with a path
+to a JSON file of prior `[question, answer]` turns to ask a follow-up question
+about the same CT, matching upstream's documented multi-turn/follow-up
+support; only the first turn carries the CT volume.
 
 ```bash
 uv run mlx-reason-ct report \
@@ -36,13 +41,17 @@ Without `--prompt`, a structured report for `--anatomy-region` is requested.
 Inference runs locally on the Apple Silicon GPU, using FP32 by default. Add `--enable-thinking` to
 use the source template's thinking mode; the reasoning is saved as `thinking` in
 `model_response.json` and `report.txt` holds only the answer. Each request owns
-its decoder state.
+its decoder state, recomputed from `history` plus the new `prompt`; there is no
+persistent cross-request session.
 
 Input must be a finite scalar 3D HU NIfTI CT with a coded spatial transform.
 Conflicting qform/sform transforms are rejected. Physical units are normalized
-to millimeters. Preprocessing warns when source anatomy selection falls back
-to a superior-edge crop. DICOM, 2D images, video and multiple-volume prompts
-are unsupported.
+to millimeters. Preprocessing warns when a requested chest/abdomen region
+falls back to a superior-edge crop; pass `anatomy_region=None`/`--anatomy-region
+none` for a plain centered crop instead, with no such warning. Upstream's own
+model card scopes input to one NIfTI CT volume with HU intensities per
+request; DICOM, 2D images and video are unsupported here and upstream alike.
+Follow-up questions about that same volume are supported through `history`.
 
 Outputs: `report.txt`, `model_response.json`, `run.json`. An empty or truncated
 response raises an error after retaining partial output and a failed completion
@@ -71,8 +80,13 @@ print(result["outputs"]["report"])
 `mlx/manifest.json`, the FP32 shards, tokenizer and chat template, as produced
 by `mlx-reason-ct download` or `mlx-reason-ct convert`. It is a directory.
 All arguments are keyword-only. Set `prompt` to a CT question,
-`enable_thinking=True` to retain reasoning, or `anatomy_region="abdomen"` for
-an abdominal report. `precision="float32"` remains the default;
+`enable_thinking=True` to retain reasoning, `anatomy_region="abdomen"` for
+an abdominal report, or `anatomy_region=None` for a plain centered crop with
+no chest/abdomen heuristic. Pass `history=[(question, answer), ...]` with
+prior completed turns, oldest first, to ask a follow-up question about the
+same CT; `prompt` (or the default structured-report request) is the new,
+still-unanswered turn, and only the first turn carries the CT volume.
+`precision="float32"` remains the default;
 `precision="bfloat16"` selects the source BF16 arithmetic profile and
 `precision="bfloat16_fp32"` selects BF16 weights with FP32 accumulation and
 decoding. Their numerical behavior and verification limitations are described in

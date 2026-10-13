@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+from collections.abc import Sequence
 from os import PathLike
 from pathlib import Path
 from typing import cast
@@ -43,10 +44,11 @@ def run(
     output_dir: str | PathLike[str],
     overwrite: bool = False,
     prompt: str | None = None,
-    anatomy_region: str = "chest",
+    anatomy_region: str | None = "chest",
     enable_thinking: bool = False,
     max_new_tokens: int = 512,
     precision: str = "float32",
+    history: Sequence[tuple[str, str]] | None = None,
 ) -> dict[str, object]:
     """Generate a report from one scalar 3D HU NIfTI CT on Apple Silicon Metal.
 
@@ -54,11 +56,16 @@ def run(
     ``mlx/manifest.json``, its FP32 shards, tokenizer and chat template. Writes
     ``report.txt``, ``model_response.json`` and ``run.json`` in ``output_dir``.
     A custom ``prompt`` asks a CT question; otherwise a structured report for
-    ``anatomy_region`` (chest or abdomen) is requested. Generation is greedy.
+    ``anatomy_region`` (chest or abdomen) is requested. Pass ``anatomy_region=None``
+    for the pinned processor's own centered crop, used upstream when the
+    chest/abdomen heuristic is unreliable for a given scan. Generation is greedy.
     ``precision`` selects float32 (default), source-matched bfloat16 arithmetic,
     or bfloat16_fp32 (BF16 weights with FP32 accumulation and decoding).
-    Empty or truncated responses raise ModelExecutionError after retaining
-    partial output and failure metadata. All reports require human review.
+    ``history`` continues a conversation about the same CT: already-answered
+    ``(question, answer)`` turns, oldest first; ``prompt`` is the new, still-
+    unanswered turn. Empty or truncated responses raise ModelExecutionError
+    after retaining partial output and failure metadata. All reports require
+    human review.
     """
     image = Path(image_path).expanduser().resolve()
     if not image.name.endswith((".nii", ".nii.gz")):
@@ -88,6 +95,7 @@ def run(
             max_new_tokens=max_new_tokens,
             precision=precision,
             overwrite=overwrite,
+            history=history,
         )
     except (InvalidInputError, AssetNotReadyError, MissingDependencyError, ModelExecutionError):
         raise

@@ -3,8 +3,8 @@
 Native MLX port of [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT)
 for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 
-- Chest and abdomen CT
-- Structured reports and CT question answering
+- Chest and abdomen CT, or a plain centered crop for other geometries
+- Structured reports, CT question answering and follow-up questions about the same scan
 - Local NIfTI input with Apple Silicon GPU acceleration
 - FP32 by default, with explicit BF16 arithmetic profiles on Metal
 
@@ -51,7 +51,10 @@ mlx-reason-ct report \
   --anatomy-region abdomen
 ```
 
-To ask a question about the CT, set `--prompt` to your question.
+To ask a question about the CT, set `--prompt` to your question. Use
+`--anatomy-region none` for scans where the chest/abdomen heuristic is
+unreliable, and `--history` to continue asking about the same CT (see
+[docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md)).
 
 For an existing Python 3.12 environment, use `pip install mlx-reason-ct==0.2.3`.
 Wheel and source archives are also available in the
@@ -74,7 +77,7 @@ print(result["outputs"]["report"])
 ```
 
 Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`,
-`precision`, `overwrite`). The model is also discoverable by
+`precision`, `overwrite`, `history`). The model is also discoverable by
 [medmlx-mcp](https://github.com/MedMLX/medmlx-mcp) as `mlx-reason-ct`. Full runner
 contract in [docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/usage.md#medmlx-runner).
 
