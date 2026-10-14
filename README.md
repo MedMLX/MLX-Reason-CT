@@ -3,15 +3,15 @@
 Native MLX port of [NVIDIA NV-Reason-CT](https://huggingface.co/nvidia/NV-Reason-CT)
 for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 
-- Chest and abdomen CT, or a plain centered crop for other geometries
-- Structured reports, CT question answering and follow-up questions about the same scan
+- Chest and abdomen CT
+- Structured reports and CT question answering
 - Local NIfTI input with Apple Silicon GPU acceleration
 - FP32 by default, with explicit BF16 arithmetic profiles on Metal
 
 MLX port by **Joseph Sandoval**.
 [Releases](https://github.com/MedMLX/MLX-Reason-CT/releases) ·
 [Weights](https://huggingface.co/josand/MLX-Reason-CT) ·
-[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md) ·
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md) ·
 [Paper](https://arxiv.org/abs/2609.27511) ·
 [HF collection](https://huggingface.co/collections/josand/medmlx-mlx-reason-ct-6ac85b2663d2ca5df1887db2)
 
@@ -21,7 +21,7 @@ Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
 Python 3.12 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
 Metal is unavailable.
 
-`v0.2.3` uses the public Apache-2.0 `medmlx-core==0.1.2` runtime from PyPI.
+`v0.2.4` uses the public Apache-2.0 `medmlx-core==0.1.2` runtime from PyPI.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
@@ -29,7 +29,8 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-uv tool install --python 3.12 mlx-reason-ct==0.2.3
+uv tool install --python 3.12 \
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.4/mlx_reason_ct-0.2.4-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -51,20 +52,23 @@ mlx-reason-ct report \
   --anatomy-region abdomen
 ```
 
-To ask a question about the CT, set `--prompt` to your question. Use
-`--anatomy-region none` for scans where the chest/abdomen heuristic is
-unreliable, and `--history` to continue asking about the same CT (see
-[docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md)).
+To ask a question about the CT, set `--prompt` to your question. The released
+0.2.4 package supports `--anatomy-region chest` or `abdomen`.
 
-For an existing Python 3.12 environment, use `pip install mlx-reason-ct==0.2.3`.
+For an existing Python 3.12 environment, use `pip install` with the same release-wheel URL.
 Wheel and source archives are also available in the
-[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.2.3).
+[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.2.4).
 For source development, clone [this repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use
 `uv run mlx-reason-ct` for the commands above.
 
+The source checkout additionally supports `--anatomy-region none` for the
+processor's plain centered crop and `--history` for follow-up questions about
+the same CT. These options are not in 0.2.4; see the
+[source usage](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md).
+
 For a generated input with no patient data, follow the
-[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/synthetic-walkthrough.md). It covers installation,
+[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/synthetic-walkthrough.md). It covers installation,
 bundle verification, input generation and completion checks.
 
 ## Python
@@ -77,9 +81,10 @@ print(result["outputs"]["report"])
 ```
 
 Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`,
-`precision`, `overwrite`, `history`). The model is also discoverable by
+`precision`, `overwrite`). The source checkout also accepts `history` and
+`anatomy_region=None`. The model is also discoverable by
 [medmlx-mcp](https://github.com/MedMLX/medmlx-mcp) as `mlx-reason-ct`. Full runner
-contract in [docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/usage.md#medmlx-runner).
+contract in [docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md#medmlx-runner).
 
 ## Input and output
 
@@ -96,12 +101,15 @@ Each run writes:
 - `model_response.json` — response, reasoning (with `--enable-thinking`) and generation metadata
 - `run.json` — execution metadata
 
+Version 0.2.4 removes a trailing empty `<answer></answer>` element from the saved
+report in both text and JSON, while preserving reasoning and nonempty answer elements.
+
 ## Technical details
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining. Implementation and verification
-details are in [docs](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/usage.md). Seeded test references are recorded on
-darwin-arm64; [verification scope](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.3/docs/verification.md) explains their bounds
+details are in [docs](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md). Seeded test references are recorded on
+darwin-arm64; [verification scope](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/verification.md) explains their bounds
 and what they do not establish.
 
 Version 0.2.3 includes faster source-BF16 projection and attention kernels.

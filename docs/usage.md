@@ -3,15 +3,25 @@
 Start with the [synthetic CT walkthrough](synthetic-walkthrough.md) to exercise
 installation and the report workflow using a generated geometric phantom.
 
+This page documents the current source checkout; commands with `uv run` assume
+`make env` has been run there. The published 0.2.4 package supports chest and
+abdomen CT, custom prompts, precision profiles and overwrite controls. Plain
+centered cropping (`--anatomy-region none` / `anatomy_region=None`) and follow-up
+history (`--history` / `history`) require the source checkout and are not in
+0.2.4. For release-specific instructions, see
+[the 0.2.4 usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md).
+
 ## CT question answering
 
 Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
-`chest` (the default) or `abdomen` to match the CT, or `none` for the pinned
-processor's own plain centered crop (upstream's own fallback for geometries
-where its chest/abdomen heuristic is unreliable). Pass `--history` with a path
-to a JSON file of prior `[question, answer]` turns to ask a follow-up question
-about the same CT, matching upstream's documented multi-turn/follow-up
-support; only the first turn carries the CT volume.
+`chest` (the default) or `abdomen` to match the CT.
+
+In the source checkout, `none` selects the pinned processor's own plain
+centered crop (upstream's own fallback for geometries where its chest/abdomen
+heuristic is unreliable). Pass `--history` with a path to a JSON file of prior
+`[question, answer]` turns to ask a follow-up question about the same CT,
+matching upstream's documented multi-turn/follow-up support; only the first
+turn carries the CT volume.
 
 ```bash
 uv run mlx-reason-ct report \
@@ -21,8 +31,8 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
-The examples below use `mlx-reason-ct` 0.2.3, which includes the MedMLX runner,
-explicit precision profiles and overwrite controls.
+The basic Python examples below also work with `mlx-reason-ct` 0.2.4, which
+includes the MedMLX runner, explicit precision profiles and overwrite controls.
 
 ```python
 from mlx_reason_ct import generate_report
@@ -41,17 +51,22 @@ Without `--prompt`, a structured report for `--anatomy-region` is requested.
 Inference runs locally on the Apple Silicon GPU, using FP32 by default. Add `--enable-thinking` to
 use the source template's thinking mode; the reasoning is saved as `thinking` in
 `model_response.json` and `report.txt` holds only the answer. Each request owns
-its decoder state, recomputed from `history` plus the new `prompt`; there is no
-persistent cross-request session.
+its decoder state. In the source checkout, this is recomputed from `history`
+plus the new `prompt`; there is no persistent cross-request session.
+
+Version 0.2.4 removes a trailing empty `<answer></answer>` element from the saved
+report in both text and JSON, while preserving reasoning and nonempty answer elements.
 
 Input must be a finite scalar 3D HU NIfTI CT with a coded spatial transform.
 Conflicting qform/sform transforms are rejected. Physical units are normalized
 to millimeters. Preprocessing warns when a requested chest/abdomen region
-falls back to a superior-edge crop; pass `anatomy_region=None`/`--anatomy-region
-none` for a plain centered crop instead, with no such warning. Upstream's own
+falls back to a superior-edge crop. In the source checkout, pass
+`anatomy_region=None`/`--anatomy-region none` for a plain centered crop instead,
+with no such warning. Upstream's own
 model card scopes input to one NIfTI CT volume with HU intensities per
 request; DICOM, 2D images and video are unsupported here and upstream alike.
-Follow-up questions about that same volume are supported through `history`.
+The source checkout supports follow-up questions about that same volume through
+`history`.
 
 Outputs: `report.txt`, `model_response.json`, `run.json`. An empty or truncated
 response raises an error after retaining partial output and a failed completion
@@ -80,12 +95,13 @@ print(result["outputs"]["report"])
 `mlx/manifest.json`, the FP32 shards, tokenizer and chat template, as produced
 by `mlx-reason-ct download` or `mlx-reason-ct convert`. It is a directory.
 All arguments are keyword-only. Set `prompt` to a CT question,
-`enable_thinking=True` to retain reasoning, `anatomy_region="abdomen"` for
-an abdominal report, or `anatomy_region=None` for a plain centered crop with
-no chest/abdomen heuristic. Pass `history=[(question, answer), ...]` with
-prior completed turns, oldest first, to ask a follow-up question about the
-same CT; `prompt` (or the default structured-report request) is the new,
-still-unanswered turn, and only the first turn carries the CT volume.
+`enable_thinking=True` to retain reasoning, or `anatomy_region="abdomen"` for
+an abdominal report. In the source checkout, `anatomy_region=None` selects a
+plain centered crop with no chest/abdomen heuristic. The source checkout also
+accepts `history=[(question, answer), ...]` with prior completed turns, oldest
+first, to ask a follow-up question about the same CT; `prompt` (or the default
+structured-report request) is the new, still-unanswered turn, and only the
+first turn carries the CT volume.
 `precision="float32"` remains the default;
 `precision="bfloat16"` selects the source BF16 arithmetic profile and
 `precision="bfloat16_fp32"` selects BF16 weights with FP32 accumulation and

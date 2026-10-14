@@ -81,21 +81,30 @@ def test_volume_prompt_positions_and_single_marker_guard() -> None:
 
 
 @pytest.mark.parametrize(
-    "report,complete", [("Draft report", True), ("Partial", False), ("", True)]
+    "response,report,complete",
+    [
+        ("Draft report", "Draft report", True),
+        ("Partial", "Partial", False),
+        ("", "", True),
+        ("FINDINGS: Clear.\n<answer></answer>", "FINDINGS: Clear.", True),
+        ("FINDINGS: Clear.\n<answer> \n\t </answer>\n", "FINDINGS: Clear.", True),
+        ("<answer></answer>", "", True),
+        ("<answer>FINDINGS: Clear.</answer>", "<answer>FINDINGS: Clear.</answer>", True),
+    ],
 )
 def test_response_completion_and_partial_persistence(
-    tmp_path: Path, report: str, complete: bool
+    tmp_path: Path, response: str, report: str, complete: bool
 ) -> None:
     metrics = {"terminated_by_eos": complete, "generated_tokens": 2}
     if report and complete:
-        outputs = save_response(tmp_path, report, metrics)
+        outputs = save_response(tmp_path, response, metrics)
         assert outputs == {
             "report": str(tmp_path / "report.txt"),
             "response": str(tmp_path / "model_response.json"),
         }
     else:
         with pytest.raises(ModelExecutionError, match="empty or incomplete"):
-            save_response(tmp_path, report, metrics)
+            save_response(tmp_path, response, metrics)
     assert (tmp_path / "report.txt").read_text() == report + "\n"
     assert json.loads((tmp_path / "model_response.json").read_text()) == {
         "schema_version": 1,
@@ -107,12 +116,16 @@ def test_response_completion_and_partial_persistence(
 
 def test_thinking_response_separates_reasoning_from_report(tmp_path: Path) -> None:
     metrics = {"terminated_by_eos": True, "generated_tokens": 9}
-    save_response(tmp_path, "Plan the report.\n</think>\n\nFINDINGS: Normal.", metrics)
+    save_response(
+        tmp_path,
+        "Plan the report with <answer></answer>.\n</think>\n\nFINDINGS: Normal.\n<answer></answer>",
+        metrics,
+    )
     assert (tmp_path / "report.txt").read_text() == "FINDINGS: Normal.\n"
     assert json.loads((tmp_path / "model_response.json").read_text()) == {
         "schema_version": 1,
         "report": "FINDINGS: Normal.",
-        "thinking": "Plan the report.",
+        "thinking": "Plan the report with <answer></answer>.",
         "requires_human_review": True,
         "generation": metrics,
     }

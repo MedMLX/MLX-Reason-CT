@@ -12,10 +12,12 @@ GPU with Metal access. The FP32 weights occupy 17.4 GB; the previously measured
 peak MLX memory is about 22.7 GB, plus preprocessing, macOS and other applications.
 Allow disk space for both the download cache and local bundle.
 
-Run these commands in a new working directory:
+Run these commands in a new working directory. This walkthrough targets the
+published `mlx-reason-ct==0.2.4` package:
 
 ```bash
-uv tool install --python 3.12 mlx-reason-ct==0.2.3
+uv tool install --python 3.12 \
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.4/mlx_reason_ct-0.2.4-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
