@@ -4,7 +4,7 @@ build-backend = "hatchling.build"
 
 [project]
 name = "mlx-reason-ct"
-version = "0.2.3"
+version = "0.2.4"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.12,<3.13"
@@ -34,7 +34,7 @@ mlx-reason-ct = "mlx_reason_ct.medmlx:MODEL"
 [project.urls]
 Homepage = "https://github.com/MedMLX/MLX-Reason-CT"
 Repository = "https://github.com/MedMLX/MLX-Reason-CT"
-Documentation = "https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/usage.md"
+Documentation = "https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md"
 Issues = "https://github.com/MedMLX/MLX-Reason-CT/issues"
 Weights = "https://huggingface.co/josand/MLX-Reason-CT"
 

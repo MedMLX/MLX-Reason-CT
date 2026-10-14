@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 from collections.abc import Mapping
 from dataclasses import dataclass
 from pathlib import Path
@@ -54,6 +55,7 @@ def save_response(output_dir: Path, response: str, metrics: Mapping[str, object]
     report_path = Path(outputs["report"])
     response_path = Path(outputs["response"])
     thinking, report = split_thinking(response)
+    report = re.sub(r"\s*<answer>\s*</answer>\s*$", "", report)
     report_path.write_text(report + "\n", encoding="utf-8")
     record: dict[str, object] = {"schema_version": 1, "report": report}
     if thinking is not None:

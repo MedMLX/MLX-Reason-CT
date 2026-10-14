@@ -16,7 +16,7 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
-The examples below use `mlx-reason-ct` 0.2.3, which includes the MedMLX runner,
+The examples below use `mlx-reason-ct` 0.2.4, which includes the MedMLX runner,
 explicit precision profiles and overwrite controls.
 
 ```python
@@ -37,6 +37,9 @@ Inference runs locally on the Apple Silicon GPU, using FP32 by default. Add `--e
 use the source template's thinking mode; the reasoning is saved as `thinking` in
 `model_response.json` and `report.txt` holds only the answer. Each request owns
 its decoder state.
+
+Version 0.2.4 removes a trailing empty `<answer></answer>` element from the saved
+report in both text and JSON, while preserving reasoning and nonempty answer elements.
 
 Input must be a finite scalar 3D HU NIfTI CT with a coded spatial transform.
 Conflicting qform/sform transforms are rejected. Physical units are normalized
