@@ -14,7 +14,7 @@ authors = [{name = "Joseph Sandoval"}]
 classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
-  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@accdfbf045a4664ee7f000108b402973fbda618f",
+  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@0a83421597991ad04c76a532780273c13854cbac",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",
@@ -22,7 +22,7 @@ dependencies = [
   "jinja2==3.1.6",
   "safetensors==0.8.0",
   "huggingface-hub==1.23.0",
-  "mlx==0.32.3; sys_platform == 'darwin' and platform_machine == 'arm64'",
+  "mlx==0.32.4; sys_platform == 'darwin' and platform_machine == 'arm64'",
 ]
 
 [project.scripts]
