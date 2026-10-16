@@ -128,3 +128,7 @@ Outputs require human review.
 Code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE), Joseph Sandoval.
 Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LICENSE), NVIDIA CORPORATION & AFFILIATES.
 [Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
+
+## Implementation mapping
+
+[implementation-map.json](implementation-map.json) records upstream-to-native changes, source references and qualification scope.
