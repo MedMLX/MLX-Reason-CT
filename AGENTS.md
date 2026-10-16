@@ -14,3 +14,12 @@
 - Run `make env`, `make qa`, and `make build` for package changes.
 - Use only synthetic CT fixtures; generated reports require human review.
 - Keep weights and local outputs outside Git. Do not add hosted CI.
+
+## Source documentation
+
+For new or changed owned source code, read and follow the
+`inline-documentation` skill for docstrings, inline comments, and
+scientific/data contracts. Document actual behavior and non-obvious rationale,
+verify claims against the implementation, and preserve native documentation
+conventions. Avoid boilerplate and unrelated, upstream, or generated
+documentation rewrites.
