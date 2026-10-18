@@ -21,7 +21,7 @@ The complete upstream license texts are retained below.
 | Primus EVA architecture semantics | [dynamic-network-architectures](https://github.com/MIC-DKFZ/dynamic-network-architectures), 0.4.3; MIC-DKFZ | Apache-2.0 |
 | EVA attention, rotary and SwiGLU semantics | [timm](https://github.com/huggingface/pytorch-image-models), 1.0.22; Ross Wightman and contributors | Apache-2.0 |
 | Qwen3.5 hybrid decoder, MRoPE and gated-delta chunk algebra | [Transformers](https://github.com/huggingface/transformers), 5.10.4; Hugging Face and contributors | Apache-2.0 |
-| CUDA Sklansky prefix-scan summation order and activation arithmetic | [PyTorch](https://github.com/pytorch/pytorch), 2.13.0, revision `cf30153c4c131c8164ee7798e5022d810682e2cb`; copyright holders listed in the retained license | [BSD](#pytorch-bsd) |
+| CPU affine-grid and trilinear sampling, CUDA Sklansky prefix-scan summation order and activation arithmetic | [PyTorch](https://github.com/pytorch/pytorch), 2.13.0, revision `cf30153c4c131c8164ee7798e5022d810682e2cb`; copyright holders listed in the retained license | [BSD](#pytorch-bsd) |
 | Vendored recurrent Metal kernel: `gated_delta.py` | [MLX-LM](https://github.com/ml-explore/mlx-lm), published 0.32.0 wheel; Copyright (c) 2025 Apple Inc. | [MIT](#apple-mit) |
 
 The Apple module is copied verbatim from the published wheel. Runtime dependencies

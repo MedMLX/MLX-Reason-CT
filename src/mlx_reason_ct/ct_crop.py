@@ -17,6 +17,7 @@ from typing import cast
 import numpy as np
 
 from mlx_reason_ct._host_types import Ndimage, Nibabel
+from mlx_reason_ct.ct_resample import resample_ct
 from mlx_reason_ct.nifti import load_ct
 
 ndimage: Ndimage = cast(Ndimage, import_module("scipy.ndimage"))
@@ -212,15 +213,7 @@ def load_anatomy_ct(
     shape, resampled_affine = spacing_grid(values.shape, affine, spacing)
     mapping: np.ndarray = np.asarray(np.linalg.solve(affine, resampled_affine))
     if shape != values.shape or not np.allclose(mapping, np.eye(4), atol=1e-3):
-        values = ndimage.affine_transform(
-            values,
-            mapping[:3, :3],
-            mapping[:3, 3],
-            output_shape=shape,
-            order=1,
-            mode="nearest",
-            prefilter=False,
-        )
+        values = resample_ct(values, mapping, shape)
     widths = tuple(
         (max(0, r - n) // 2, max(0, r - n) - max(0, r - n) // 2)
         for n, r in zip(shape, roi, strict=True)

@@ -65,17 +65,6 @@ class Nibabel(Protocol):
 class Ndimage(Protocol):
     def binary_fill_holes(self, input: NDArray[np.bool_]) -> NDArray[np.bool_]: ...
     def label(self, input: NDArray[np.bool_]) -> tuple[NDArray[np.int32], int]: ...
-    def affine_transform(
-        self,
-        input: FloatArray,
-        matrix: Affine,
-        offset: Affine,
-        *,
-        output_shape: tuple[int, ...],
-        order: int,
-        mode: Literal["nearest"],
-        prefilter: bool,
-    ) -> FloatArray: ...
 
 
 class Encoding(Protocol):

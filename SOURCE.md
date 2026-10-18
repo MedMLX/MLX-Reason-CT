@@ -19,6 +19,20 @@ MRoPE, cast boundaries and cache storage follow Transformers 5.10.4 (Apache-2.0)
 The disconnected 2D tower, inactive mask token and duplicate tied LM head are
 excluded; the source processor rejects 2D images and videos.
 
+Host CT resampling retains MONAI 1.6.0's `spatial_resample` and `to_norm_affine`
+normalization, followed by the pinned PyTorch CPU float32 `affine_grid` and
+border-clamped `grid_sample` arithmetic. This includes the separately rounded
+axis scaling, four-term affine products and eight trilinear corner stores.
+The implementation uses NumPy on the host and bounds coordinate storage to
+eight output planes. Synthetic host-resampling fixtures come from the original
+MONAI/PyTorch CPU operators on the Intel source host with one thread, isolating
+the K4 arithmetic from threaded BLAS shard tails. They check resampling
+independently of the model weights, vision outputs and generated reports.
+Source files are
+[`AffineGridGenerator.cpp`](https://github.com/pytorch/pytorch/blob/cf30153c4c131c8164ee7798e5022d810682e2cb/aten/src/ATen/native/AffineGridGenerator.cpp)
+and
+[`GridSampler.cpp`](https://github.com/pytorch/pytorch/blob/cf30153c4c131c8164ee7798e5022d810682e2cb/aten/src/ATen/native/GridSampler.cpp).
+
 Public precision selection retains these arithmetic identities:
 
 | Public profile | Internal profile | Learned storage and arithmetic |

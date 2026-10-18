@@ -11,8 +11,20 @@ import pytest
 
 from mlx_reason_ct._host_types import Nibabel
 from mlx_reason_ct.ct_crop import anatomy_crop, load_anatomy_ct
+from mlx_reason_ct.ct_resample import resample_ct
 
 nib = cast(Nibabel, import_module("nibabel"))
+
+
+@pytest.mark.parametrize("case", [0, 1, 2, 3])
+def test_resampling_matches_original_float32_processor_grid(case: int) -> None:
+    fixture = Path(__file__).parent / "fixtures/nv_reason_ct" / f"ct_resampling-{case}.npz"
+    with np.load(fixture) as data:
+        expected = cast(np.ndarray, data["expected"])
+        actual = resample_ct(
+            cast(np.ndarray, data["values"]), cast(np.ndarray, data["mapping"]), expected.shape
+        )
+    np.testing.assert_array_equal(actual, expected)
 
 
 def test_air_padding_preserves_hu_and_voxel_world_coordinates(tmp_path: Path) -> None:
