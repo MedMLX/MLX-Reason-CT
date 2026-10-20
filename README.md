@@ -28,7 +28,7 @@ allow additional unified memory for preprocessing, macOS and other apps.
 
 ```bash
 uv tool install --python 3.13 \
-  "mlx-reason-ct @ git+https://github.com/MedMLX/MLX-Reason-CT.git@1c2b804d159c9bc81527415558deaff2df4c3d76"
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.0/mlx_reason_ct-0.3.0-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -54,8 +54,7 @@ To ask a question about the CT, set `--prompt` to your question. Use
 `--anatomy-region none` for the processor's plain centered crop and `--history`
 for follow-up questions about the same CT; see [usage](docs/usage.md).
 
-The v0.2.4 release wheel predates the CT resampling used in the MedMLX paper's
-expanded evaluation; install the revision above. For source development, clone
+For source development, clone
 [this repository](https://github.com/MedMLX/MLX-Reason-CT) and run `make env`;
 use `uv run mlx-reason-ct` for the commands above.
 

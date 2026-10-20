@@ -4,19 +4,17 @@ Start with the [synthetic CT walkthrough](synthetic-walkthrough.md) to exercise
 installation and the report workflow using a generated geometric phantom.
 
 This page documents the current source checkout; commands with `uv run` assume
-`make env` has been run there. The published 0.2.4 package supports chest and
-abdomen CT, custom prompts, precision profiles and overwrite controls. Plain
+`make env` has been run there. The published 0.3.0 package includes plain
 centered cropping (`--anatomy-region none` / `anatomy_region=None`) and follow-up
-history (`--history` / `history`) require the source checkout and are not in
-0.2.4. For release-specific instructions, see
-[the 0.2.4 usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md).
+history (`--history` / `history`). For release-specific instructions, see
+[the 0.3.0 usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/usage.md).
 
 ## CT question answering
 
 Use `--prompt` to ask a question about the volume. Set `--anatomy-region` to
 `chest` (the default) or `abdomen` to match the CT.
 
-In the source checkout, `none` selects the pinned processor's own plain
+`none` selects the pinned processor's own plain
 centered crop (upstream's own fallback for geometries where its chest/abdomen
 heuristic is unreliable). Pass `--history` with a path to a JSON file of prior
 `[question, answer]` turns to ask a follow-up question about the same CT,
@@ -31,8 +29,8 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
-The basic Python examples below also work with `mlx-reason-ct` 0.2.4, which
-includes the MedMLX runner, explicit precision profiles and overwrite controls.
+The Python examples below also work with the published `mlx-reason-ct` 0.3.0
+package.
 
 ```python
 from mlx_reason_ct import generate_report
@@ -51,7 +49,7 @@ Without `--prompt`, a structured report for `--anatomy-region` is requested.
 Inference runs locally on the Apple Silicon GPU, using FP32 by default. Add `--enable-thinking` to
 use the source template's thinking mode; the reasoning is saved as `thinking` in
 `model_response.json` and `report.txt` holds only the answer. Each request owns
-its decoder state. In the source checkout, this is recomputed from `history`
+its decoder state. This is recomputed from `history`
 plus the new `prompt`; there is no persistent cross-request session.
 
 Version 0.2.4 removes a trailing empty `<answer></answer>` element from the saved

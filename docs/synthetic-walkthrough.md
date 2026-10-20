@@ -7,17 +7,17 @@ accuracy or clinical performance. Outputs require human review.
 
 ## Install and verify the bundle
 
-Use macOS arm64, Python 3.12, [uv](https://docs.astral.sh/uv/) and an Apple Silicon
+Use macOS arm64, Python 3.13 or 3.14, [uv](https://docs.astral.sh/uv/) and an Apple Silicon
 GPU with Metal access. The FP32 weights occupy 17.4 GB; the previously measured
 peak MLX memory is about 22.7 GB, plus preprocessing, macOS and other applications.
 Allow disk space for both the download cache and local bundle.
 
 Run these commands in a new working directory. This walkthrough targets the
-published `mlx-reason-ct==0.2.4` package:
+published `mlx-reason-ct==0.3.0` package:
 
 ```bash
-uv tool install --python 3.12 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.2.4/mlx_reason_ct-0.2.4-py3-none-any.whl
+uv tool install --python 3.13 \
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.0/mlx_reason_ct-0.3.0-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -28,7 +28,7 @@ mlx-reason-ct verify --model-dir models
 
 If `uv` reports that its executable directory is missing from `PATH`, run
 `uv tool update-shell` and open a new terminal before invoking `mlx-reason-ct`.
-The public `medmlx-core==0.1.2` dependency installs from PyPI with the package.
+The public `medmlx-core==0.2.1` dependency installs from PyPI with the package.
 
 Verification prints JSON containing `"verified": true`, `"dtype": "float32"`,
 `"shards": 35` and source revision
@@ -43,7 +43,7 @@ millimeter units. Background is -1000, the body is 40, two enclosed air regions
 are -800, and a small dense region is 700. It refuses to replace an existing input.
 
 ```bash
-uv run --no-project --python 3.12 \
+uv run --no-project --python 3.13 \
   --with numpy==2.3.5 --with nibabel==5.4.2 python - <<'PY'
 from pathlib import Path
 
@@ -114,7 +114,7 @@ not a fixed expected result.
 Inspect completion with a separate host-only command:
 
 ```bash
-uv run --no-project --python 3.12 python - <<'PY'
+uv run --no-project --python 3.13 python - <<'PY'
 import json
 from pathlib import Path
 

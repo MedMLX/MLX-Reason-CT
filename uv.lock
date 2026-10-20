@@ -175,10 +175,14 @@ wheels = [
 [[package]]
 name = "medmlx-core"
 version = "0.2.1"
-source = { git = "https://github.com/MedMLX/medmlx-core.git?rev=e3bac233f6f733766acdecbe78105c35b9ba0080#e3bac233f6f733766acdecbe78105c35b9ba0080" }
+source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mlx" },
     { name = "numpy" },
+]
+sdist = { url = "https://files.pythonhosted.org/packages/77/e4/ba3679c98554cbe474d2d5576cba488f864e17b54a24af63a0a710b923a1/medmlx_core-0.2.1.tar.gz", hash = "sha256:27ea5d6e78ffbd0419f2d49c19af3b5f9624a62799a7b224c6a3c27f5afc73f5", size = 316335, upload-time = "2026-10-20T22:55:52.119Z" }
+wheels = [
+    { url = "https://files.pythonhosted.org/packages/5c/00/ac4b2e1b47777f42c2c32e3eaa37ca28dfd8785fd820337be77427b886df/medmlx_core-0.2.1-py3-none-any.whl", hash = "sha256:2a6307315f34f2ae1eef0dbba00385209f9f523d563dad18219d9b057f2e7794", size = 58865, upload-time = "2026-10-20T22:55:51.041Z" },
 ]
 
 [[package]]
@@ -215,7 +219,7 @@ wheels = [
 
 [[package]]
 name = "mlx-reason-ct"
-version = "0.2.4"
+version = "0.3.0"
 source = { editable = "." }
 dependencies = [
     { name = "huggingface-hub" },
@@ -240,7 +244,7 @@ dev = [
 requires-dist = [
     { name = "huggingface-hub", specifier = "==1.23.0" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "medmlx-core", git = "https://github.com/MedMLX/medmlx-core.git?rev=e3bac233f6f733766acdecbe78105c35b9ba0080" },
+    { name = "medmlx-core", specifier = "==0.2.1" },
     { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.4" },
     { name = "nibabel", specifier = "==5.4.2" },
     { name = "numpy", specifier = "==2.3.5" },
