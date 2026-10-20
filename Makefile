@@ -1,7 +1,7 @@
 .PHONY: env lint typecheck test qa build
 
 env:
-	uv sync --locked --python 3.12
+	uv sync --locked --python 3.13
 
 lint:
 	uv run --locked ruff check .

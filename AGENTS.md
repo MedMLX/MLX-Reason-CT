@@ -2,7 +2,7 @@
 
 - Project: MLX-Reason-CT; package/CLI: `mlx-reason-ct`.
 - Repository: `MedMLX/MLX-Reason-CT`; public code repository; retain separate model-material licensing.
-- Python 3.12; pinned dependencies in `pyproject.toml` and `uv.lock`.
+- Python 3.13 or 3.14; pinned dependencies in `pyproject.toml` and `uv.lock`.
 - Supported platform: macOS arm64 with MLX on Metal only, FP32 by default;
   explicit BF16 arithmetic profiles retain the pinned source boundaries.
   Host preprocessing, conversion and bundle verification are not inference backends.

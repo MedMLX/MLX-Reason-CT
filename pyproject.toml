@@ -7,14 +7,14 @@ name = "mlx-reason-ct"
 version = "0.2.4"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
-requires-python = ">=3.12,<3.13"
+requires-python = ">=3.13,<3.15"
 license = "Apache-2.0"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [{name = "Joseph Sandoval"}]
 classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
-  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@0a83421597991ad04c76a532780273c13854cbac",
+  "medmlx-core @ git+https://github.com/MedMLX/medmlx-core.git@e3bac233f6f733766acdecbe78105c35b9ba0080",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",
@@ -55,7 +55,7 @@ environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
 required-environments = ["sys_platform == 'darwin' and platform_machine == 'arm64'"]
 
 [tool.ruff]
-target-version = "py312"
+target-version = "py313"
 line-length = 100
 extend-exclude = ["src/mlx_reason_ct/gated_delta.py"]
 
@@ -66,7 +66,7 @@ select = ["E", "F", "I", "UP"]
 [tool.pyright]
 include = ["scripts","src","tests"]
 extraPaths = ["src"]
-pythonVersion = "3.12"
+pythonVersion = "3.13"
 typeCheckingMode = "strict"
 enableTypeIgnoreComments = false
 reportUnnecessaryTypeIgnoreComment = "error"
