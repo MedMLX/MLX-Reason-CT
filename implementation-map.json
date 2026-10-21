@@ -296,8 +296,8 @@
         "evidence": [
           {
             "path": "src/mlx_reason_ct/ct_crop.py",
-            "start_line": 193,
-            "end_line": 244
+            "start_line": 194,
+            "end_line": 237
           },
           {
             "path": "src/mlx_reason_ct/processor_mlx.py",
