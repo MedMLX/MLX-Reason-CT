@@ -109,8 +109,7 @@ covered ten model shapes plus ragged, wide-exponent and partitioned cases; all
 outputs matched bitwise. These probes support the execution changes, while the
 full-model run checks their integration.
 
-Local scripts, raw samples and receipts are retained under
-`outputs/bf16-20261009/` and are not packaged. This evidence does not complete
+This evidence does not complete
 the four-case original-BF16 qualification matrix or establish clinical accuracy.
 
 ### Attention query and probability reuse
@@ -139,5 +138,4 @@ The same run completed its fresh full-prefix uncached continuation without an
 interruption, in 389.0 seconds. Its logits were bitwise unchanged from the prior
 native result, with source NRMSE 0.0000297 and zero tolerance violations. Both
 cached and uncached generation reached the expected EOS. The longer three
-qualification cases remain unqualified. Local scripts, raw timings
-and receipts are retained in `outputs/bf16-followup-20261009/`.
+qualification cases remain unqualified.
