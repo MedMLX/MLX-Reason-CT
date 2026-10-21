@@ -98,9 +98,9 @@ report in both text and JSON, while preserving reasoning and nonempty answer ele
 ## Technical details
 
 Inference defaults to FP32 with weights converted directly from the
-original BF16 checkpoint, without retraining. Implementation and verification
-details are in [docs](docs/usage.md). Seeded test references are recorded on
-darwin-arm64; [verification scope](docs/verification.md) explains their bounds
+original BF16 checkpoint, without retraining. See the
+[source and arithmetic contracts](SOURCE.md) and [usage guide](docs/usage.md).
+Seeded test references are recorded on darwin-arm64; [verification scope](docs/verification.md) explains their bounds
 and what they do not establish.
 
 Version 0.2.3 includes faster source-BF16 projection and attention kernels.
@@ -119,7 +119,3 @@ Outputs require human review.
 Code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE), Joseph Sandoval.
 Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LICENSE), NVIDIA CORPORATION & AFFILIATES.
 [Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
-
-## Implementation mapping
-
-[implementation-map.json](implementation-map.json) records upstream-to-native changes, source references and qualification scope.

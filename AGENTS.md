@@ -14,6 +14,11 @@
 - Run `make env`, `make qa`, and `make build` for package changes.
 - Use only synthetic CT fixtures; generated reports require human review.
 - Keep weights and local outputs outside Git. Do not add hosted CI.
+- Use the existing environment or temporary directories outside the checkout for
+  release checks; do not retain copied checkouts or per-release environments.
+- Keep unique measurements, settings, source/checkpoint revisions and test fixtures.
+  Do not generate source/publication inventories, audit maps or duplicate receipts;
+  document contracts in SOURCE.md and measurements in docs/verification.md.
 
 ## Source documentation
 

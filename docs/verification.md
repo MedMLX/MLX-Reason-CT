@@ -52,6 +52,17 @@ The Metal suite checks recurrence, precision profiles and cache behavior. Neithe
 subset establishes full-model parity, report accuracy or clinical validation.
 All generated reports require human review.
 
+## Historical FP32 comparison
+
+The recorded task-output comparison at native revision
+`eb2c10baf688b32eee082dbb8973e88b4555db7a` references
+`Med-MLX/results/runs/nv-reason-ct.json` and
+`Med-MLX/results/reference/nv-reason-ct.json`, with its configuration in
+`Med-MLX/models/registry.yaml`. It records greedy-token agreement against the
+source CPU FP32 profile on the recorded case. This historical result does not
+establish original CUDA BF16 parity or diagnostic accuracy. The model/checkpoint
+revision remains pinned in [SOURCE.md](../SOURCE.md).
+
 ## Source-BF16 optimization measurement (2026-10-09)
 
 One synthetic `small-question` case was measured on an Apple M1 Max with 32 GPU
