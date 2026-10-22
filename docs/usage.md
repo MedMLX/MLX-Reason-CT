@@ -74,7 +74,8 @@ record. Increase `--max-new-tokens` if needed; the supported range is 1–8192.
 
 The package registers `mlx-reason-ct` in the `medmlx.models` entry point group
 with task `generation`, for discovery by `medmlx-mcp`. Importing the package or
-its declaration does not load MLX; runtime readiness is checked separately.
+its declaration does not load MLX; `medmlx-mcp` probes the runtime in an isolated
+process before inference.
 
 ```python
 from mlx_reason_ct.medmlx import run

@@ -21,20 +21,8 @@ MODEL: dict[str, str] = {
     "label": "NV-Reason-CT",
     "task": "generation",
     "run": "mlx_reason_ct.medmlx:run",
-    "readiness": "mlx_reason_ct.medmlx:readiness",
     "summary": "CT reporting and question answering with NV-Reason-CT on Metal; FP32 by default.",
 }
-
-
-def readiness() -> dict[str, object]:
-    """Report the required Metal runtime separately from model discovery."""
-    from mlx_reason_ct.runtime import import_mlx
-
-    try:
-        import_mlx()
-    except MissingDependencyError as error:
-        return {"ready": False, "reason": str(error), "setup_hint": error.hint}
-    return {"ready": True, "reason": None, "setup_hint": None}
 
 
 def run(

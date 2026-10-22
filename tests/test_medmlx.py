@@ -26,7 +26,7 @@ from test_weights import source_checkpoint
 from mlx_reason_ct import api, mlx_weights
 from mlx_reason_ct._host_types import HostArray, Nibabel, Tokenizers
 from mlx_reason_ct.errors import InvalidPromptError
-from mlx_reason_ct.medmlx import MODEL, readiness, run
+from mlx_reason_ct.medmlx import MODEL, run
 from mlx_reason_ct.processor_mlx import VolumePrompt
 
 nib = cast(Nibabel, import_module("nibabel"))
@@ -123,7 +123,6 @@ import mlx_reason_ct
 assert 'mlx_reason_ct.api' not in sys.modules
 import mlx_reason_ct.medmlx as m
 assert m.MODEL['run'] == 'mlx_reason_ct.medmlx:run'
-assert m.readiness()['ready'] is False
 from mlx_reason_ct import (
     generate_report, InvalidInputError, InvalidPromptError, ModelExecutionError,
 )
@@ -254,7 +253,6 @@ def test_runtime_uses_core_and_preserves_metal_requirement(monkeypatch: pytest.M
     monkeypatch.setattr(runtime.platform, "machine", lambda: "x86_64")
     with pytest.raises(MissingDependencyError, match="Apple Silicon"):
         runtime.import_mlx()
-    assert readiness()["ready"] is False
 
 
 @pytest.mark.parametrize("error", [ImportError("missing mlx"), OSError("broken library")])
@@ -273,7 +271,6 @@ def test_runtime_load_failure_is_typed(
     monkeypatch.setattr(core_runtime, "import_mlx", fail)
     with pytest.raises(MissingDependencyError, match="Metal runtime"):
         runtime.import_mlx()
-    assert readiness()["ready"] is False
 
 
 @pytest.fixture
