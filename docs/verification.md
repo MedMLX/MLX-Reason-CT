@@ -8,7 +8,7 @@ are separate from learned execution.
 
 `tests/fixtures/nv_reason_ct/arithmetic.json` was recorded on darwin-arm64 with
 NumPy 2.3.5 and Python 3.12. It contains analytic float64 expectations, explicit
-BF16 storage rounding and seed/provenance metadata. It contains no learned
+BF16 storage rounding, seed and source metadata. It contains no learned
 weights or medical data. Re-record it from the repository root:
 
 ```bash

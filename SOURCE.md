@@ -1,4 +1,4 @@
-# Native NV-Reason-CT source provenance
+# Native NV-Reason-CT source details
 
 The package supports macOS arm64 with MLX on Metal only. Shared runtime admission
 raises when Metal is unavailable; learned operations have no host fallback.
@@ -57,14 +57,14 @@ inference path. The package initializer and MedMLX declaration remain lazy.
 The multi-token prefill retains Transformers' 64-token chunk algebra. Its
 Sklansky scan, activation formulas, normalization, projection stores and
 single-token recurrence preserve the pinned source arithmetic. Source operator
-provenance includes PyTorch 2.13.0 revision
+source details include PyTorch 2.13.0 revision
 `cf30153c4c131c8164ee7798e5022d810682e2cb`, the Flash source submodule
 `6c4f74fb338e0c3cdb07ac6f5eab5f54fc367c15`, and MLX 0.32.2 layout helpers.
 MIT/BSD notices remain in `src/mlx_reason_ct/licenses/`.
 
 `source_arithmetic_assets` contains Metal kernels and losslessly
 encoded, model-independent unary/rotary constants. Their original encoding and
-source provenance are retained; they are not selectable execution backends or
+source details are retained; they are not selectable execution backends or
 platform-keyed test fixtures. They contain no learned parameters or case-specific
 neural outputs. Their source operation order and rounding behavior are part of
 the model's arithmetic contract.

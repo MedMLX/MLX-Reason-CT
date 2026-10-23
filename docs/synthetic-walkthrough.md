@@ -107,7 +107,7 @@ synthetic-ct/
 ```
 
 `report.txt` contains the generated answer. `model_response.json` contains the
-answer and generation metrics; `run.json` records geometry, source provenance,
+answer and generation metrics; `run.json` records geometry, source details,
 precision, runtime and completion status. Actual answer wording is model output,
 not a fixed expected result.
 
