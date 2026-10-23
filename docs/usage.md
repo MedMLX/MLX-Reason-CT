@@ -4,10 +4,10 @@ Start with the [synthetic CT walkthrough](synthetic-walkthrough.md) to exercise
 installation and the report workflow using a generated geometric phantom.
 
 This page documents the current source checkout; commands with `uv run` assume
-`make env` has been run there. The published 0.3.0 package includes plain
+`make env` has been run there. The published 0.3.1 package includes plain
 centered cropping (`--anatomy-region none` / `anatomy_region=None`) and follow-up
 history (`--history` / `history`). For release-specific instructions, see
-[the 0.3.0 usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/usage.md).
+[the 0.3.1 usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md).
 
 ## CT question answering
 
@@ -29,7 +29,7 @@ uv run mlx-reason-ct report \
 
 ## Python API
 
-The Python examples below also work with the published `mlx-reason-ct` 0.3.0
+The Python examples below also work with the published `mlx-reason-ct` 0.3.1
 package.
 
 ```python

@@ -32,7 +32,7 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 
 MLX port by **Joseph Sandoval**.
 [GitHub releases](https://github.com/MedMLX/MLX-Reason-CT/releases) ·
-[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/usage.md) ·
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md) ·
 [Paper](https://arxiv.org/abs/2609.27511) ·
 [HF collection](https://huggingface.co/collections/josand/medmlx-mlx-reason-ct-6ac85b2663d2ca5df1887db2)
 
@@ -46,7 +46,7 @@ Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
 Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
 Metal is unavailable.
 
-`v0.3.0` uses the public Apache-2.0 `medmlx-core==0.2.1` runtime from PyPI.
+`v0.3.1` uses the public Apache-2.0 `medmlx-core==0.2.1` runtime from PyPI.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
@@ -55,7 +55,7 @@ allow additional unified memory for preprocessing, macOS and other apps.
 
 ```bash
 uv tool install --python 3.13 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.0/mlx_reason_ct-0.3.0-py3-none-any.whl
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.1/mlx_reason_ct-0.3.1-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
@@ -80,16 +80,16 @@ mlx-reason-ct report \
 To ask a question about the CT, set `--prompt` to your question. Use
 `--anatomy-region none` for the processor's plain centered crop and `--history`
 for follow-up questions about the same CT; see the
-[usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/usage.md).
+[usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md).
 
 For an existing Python 3.13 or 3.14 environment, use `pip install` with the same release-wheel URL.
 Wheel and source archives are also available in the
-[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.3.0).
+[GitHub release](https://github.com/MedMLX/MLX-Reason-CT/releases/tag/v0.3.1).
 For source development, clone [the repository](https://github.com/MedMLX/MLX-Reason-CT)
 and run `make env`; use `uv run mlx-reason-ct` for the commands above.
 
 For a generated input with no patient data, follow the
-[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/synthetic-walkthrough.md).
+[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/synthetic-walkthrough.md).
 It covers installation, bundle verification, input generation and completion checks.
 
 ## Input and output
@@ -114,7 +114,7 @@ report in both text and JSON, while preserving reasoning and nonempty answer ele
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining.
-[Implementation and verification details](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.0/docs/usage.md),
+[Implementation and verification details](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md),
 and the limits of its darwin-arm64 component references are in the companion repository.
 [Upstream model card and limitations](https://huggingface.co/nvidia/NV-Reason-CT).
 

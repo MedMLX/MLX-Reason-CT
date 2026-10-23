@@ -13,11 +13,11 @@ peak MLX memory is about 22.7 GB, plus preprocessing, macOS and other applicatio
 Allow disk space for both the download cache and local bundle.
 
 Run these commands in a new working directory. This walkthrough targets the
-published `mlx-reason-ct==0.3.0` package:
+published `mlx-reason-ct==0.3.1` package:
 
 ```bash
 uv tool install --python 3.13 \
-  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.0/mlx_reason_ct-0.3.0-py3-none-any.whl
+  https://github.com/MedMLX/MLX-Reason-CT/releases/download/v0.3.1/mlx_reason_ct-0.3.1-py3-none-any.whl
 
 mlx-reason-ct download \
   --revision c690a63888b9c6c9bd006687335fbd650eb60275 \
