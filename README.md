@@ -74,7 +74,7 @@ print(result["outputs"]["report"])
 Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`,
 `precision`, `overwrite`, `history`; `anatomy_region=None` for the centered crop).
 The model is also discoverable by
-[medmlx-mcp](https://github.com/MedMLX/medmlx-mcp) as `mlx-reason-ct`. Full runner
+[medmlx](https://github.com/MedMLX/medmlx) as `mlx-reason-ct`. Full runner
 contract in [docs/usage.md](docs/usage.md#medmlx-runner).
 
 ## Input and output

@@ -73,8 +73,8 @@ record. Increase `--max-new-tokens` if needed; the supported range is 1–8192.
 ## MedMLX runner
 
 The package registers `mlx-reason-ct` in the `medmlx.models` entry point group
-with task `generation`, for discovery by `medmlx-mcp`. Importing the package or
-its declaration does not load MLX; `medmlx-mcp` probes the runtime in an isolated
+with task `generation`, for discovery by `medmlx`. Importing the package or
+its declaration does not load MLX; `medmlx` probes the runtime in an isolated
 process before inference.
 
 ```python
@@ -155,11 +155,16 @@ and fails explicitly when Metal is unavailable.
 
 ## Development and verification
 
+Use the existing environment and select checks for the changed behavior:
+
 ```bash
-make env
-make qa
-make build
+make qa  # static checks only
+make test TESTS=tests/path/to/test.py PYTEST_ARGS=-q
 ```
+
+Run `make env` only when preparing or updating dependencies. Package builds
+(`make build`) and full model checks are explicit tasks; documentation or
+metadata changes do not require them.
 
 [Verification scope](verification.md) describes the darwin-arm64 references,
 rounding bounds, host-stage checks and Metal tests. These checks establish no
