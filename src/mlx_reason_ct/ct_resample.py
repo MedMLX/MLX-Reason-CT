@@ -2,7 +2,7 @@
 
 Keep normalized affine-grid rounding and border-clamped trilinear corner order.
 Direct interpolation in float64 voxel coordinates changes BF16 input rounding.
-Source operations and license provenance are recorded in SOURCE.md.
+Source operations and license provenance are recorded in docs/technical.md.
 """
 
 from __future__ import annotations

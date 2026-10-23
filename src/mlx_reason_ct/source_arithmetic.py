@@ -2,7 +2,7 @@
 
 Learned operations stay on Metal. Compact unary assets contain only losslessly
 encoded, model-independent source instruction outputs and fixed rotary constants.
-See SOURCE.md for source pins, measured dispatch and independent controls.
+See docs/technical.md for source pins, measured dispatch and independent controls.
 """
 
 from __future__ import annotations

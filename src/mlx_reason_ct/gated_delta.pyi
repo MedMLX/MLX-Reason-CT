@@ -10,7 +10,7 @@ def gated_delta_kernel_xtree(
     beta: mx.array,
     state: mx.array,
     mask: mx.array | None = None,
-) -> tuple[mx.array, mx.array]: ...
+) -> list[mx.array]: ...
 def gated_delta_kernel_unpacked(
     q: mx.array,
     k: mx.array,
@@ -19,7 +19,7 @@ def gated_delta_kernel_unpacked(
     beta: mx.array,
     state: mx.array,
     mask: mx.array | None = None,
-) -> tuple[mx.array, mx.array]: ...
+) -> list[mx.array]: ...
 def gated_delta_kernel(
     q: mx.array,
     k: mx.array,
@@ -28,4 +28,4 @@ def gated_delta_kernel(
     beta: mx.array,
     state: mx.array,
     mask: mx.array | None = None,
-) -> tuple[mx.array, mx.array]: ...
+) -> list[mx.array]: ...

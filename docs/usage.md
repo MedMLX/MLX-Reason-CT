@@ -105,7 +105,7 @@ first turn carries the CT volume.
 `precision="bfloat16"` selects the source BF16 arithmetic profile and
 `precision="bfloat16_fp32"` selects BF16 weights with FP32 accumulation and
 decoding. Their numerical behavior and verification limitations are described in
-[SOURCE.md](../SOURCE.md). Generation remains greedy. Existing output files require
+[source and arithmetic contracts](technical.md). Generation remains greedy. Existing output files require
 `overwrite=True`; this guard also applies to the public `generate_report` API.
 The CLI accepts `--overwrite` for the same action and `--precision` for profile selection.
 

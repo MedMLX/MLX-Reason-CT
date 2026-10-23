@@ -99,7 +99,7 @@ report in both text and JSON, while preserving reasoning and nonempty answer ele
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining. See the
-[source and arithmetic contracts](SOURCE.md) and [usage guide](docs/usage.md).
+[source and arithmetic contracts](docs/technical.md) and [usage guide](docs/usage.md).
 Seeded test references are recorded on darwin-arm64; [verification scope](docs/verification.md) explains their bounds
 and what they do not establish.
 

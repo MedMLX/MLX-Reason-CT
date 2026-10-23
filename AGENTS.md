@@ -18,7 +18,7 @@
   release checks; do not retain copied checkouts or per-release environments.
 - Keep unique measurements, settings, source/checkpoint revisions and test fixtures.
   Do not generate source/publication inventories, audit maps or duplicate receipts;
-  document contracts in SOURCE.md and measurements in docs/verification.md.
+  document contracts in docs/technical.md and measurements in docs/verification.md.
 
 ## Source documentation
 
@@ -45,3 +45,18 @@ when the change or the user requires them. Documentation, file moves and metadat
 edits do not require full QA. Do not synchronize environments, run sibling gates,
 or repeat passed checks without a new relevant change. Mandatory full QA after
 every edit was rejected because it adds unrelated work and delays feedback.
+
+## Typing policy
+
+Use Pyright strict mode over the maintained source, tests, scripts and local
+stubs declared in `pyproject.toml`. Type-ignore comments stay disabled and
+unnecessary ignores are errors. Use the maintained host Node with the pinned
+Pyright dependency; do not install the `pyright[nodejs]` extra.
+
+Explicit dynamic types remain prohibited. Use Pyright and Ruff for static
+checks; custom AST typing scanners add duplicate code and maintenance.
+Fix source contracts rather than adding suppressions or weakening diagnostics.
+
+Validation calls the provisioned project Python directly. Using `uv run --no-sync`
+as an environment guard was rejected because it can create an empty environment
+and select development tools from the host PATH.

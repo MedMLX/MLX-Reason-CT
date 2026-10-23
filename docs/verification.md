@@ -62,7 +62,7 @@ The recorded task-output comparison at native revision
 `Med-MLX/models/registry.yaml`. It records greedy-token agreement against the
 source CPU FP32 profile on the recorded case. This historical result does not
 establish original CUDA BF16 parity or diagnostic accuracy. The model/checkpoint
-revision remains pinned in [SOURCE.md](../SOURCE.md).
+revision remains pinned in [technical notes](technical.md).
 
 ## Source-BF16 optimization measurement (2026-10-09)
 

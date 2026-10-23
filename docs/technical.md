@@ -60,7 +60,7 @@ single-token recurrence preserve the pinned source arithmetic. Source operator
 source details include PyTorch 2.13.0 revision
 `cf30153c4c131c8164ee7798e5022d810682e2cb`, the Flash source submodule
 `6c4f74fb338e0c3cdb07ac6f5eab5f54fc367c15`, and MLX 0.32.2 layout helpers.
-MIT/BSD notices remain in `src/mlx_reason_ct/licenses/`.
+MIT/BSD notices remain in `THIRD_PARTY_NOTICES.md`.
 
 `source_arithmetic_assets` contains Metal kernels and losslessly
 encoded, model-independent unary/rotary constants. Their original encoding and
@@ -90,7 +90,7 @@ are reused across value channels. Each score and output retains its original
 K8 accumulation order.
 Projection launches group up to 512 rows to reduce dispatch overhead, retaining
 the same per-output arithmetic and partition stores. See the
-[verification scope](docs/verification.md) for measured evidence and limits.
+[verification scope](verification.md) for measured evidence and limits.
 
 ## Current test references
 
@@ -108,5 +108,5 @@ batch boundary with bias and source partition stores.
 Uniform-attention tests independently check masked value means across key tiles,
 query batches, output channels and grouped heads.
 
-See [verification scope](docs/verification.md). These component checks do not
+See [verification scope](verification.md). These component checks do not
 establish full-model parity, clinical validation or report accuracy.
