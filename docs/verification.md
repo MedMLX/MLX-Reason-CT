@@ -34,9 +34,10 @@ without requiring bitwise agreement with another platform's reduction order.
 ## Checks
 
 ```bash
-make env
-make qa
-make build
+make env   # only when preparing or updating the environment
+make qa    # lint, formatting and Pyright; no model execution
+make test TESTS=tests/test_ct_crop.py  # choose tests for the changed behavior
+# make test runs the full suite; make build and make verifytypes are explicit.
 ```
 
 Metal tests require GPU access. In a sandbox without it, run host-stage tests:
