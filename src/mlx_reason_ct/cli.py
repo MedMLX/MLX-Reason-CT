@@ -4,8 +4,10 @@ from __future__ import annotations
 
 import argparse
 import json
+from collections.abc import Sequence
 from importlib import import_module
 from pathlib import Path
+from typing import cast
 
 from mlx_reason_ct.api import PRECISION_PROFILES, generate_report
 from mlx_reason_ct.mlx_weights import convert_checkpoint, read_manifest
@@ -68,10 +70,14 @@ def main() -> int:
     elif args.command == "convert":
         print(convert_checkpoint(args.source_dir, args.output_dir))
     else:
-        history: list[tuple[str, str]] | None = None
+        history: Sequence[tuple[str, str]] | None = None
         if args.history is not None:
-            raw_history = json.loads(args.history.read_text())
-            history = [(str(question), str(answer)) for question, answer in raw_history]
+            # Preserve untrusted JSON for the API's history validator. Stringifying
+            # entries would turn malformed values into plausible conversation text.
+            history = cast(
+                Sequence[tuple[str, str]],
+                json.loads(args.history.read_text(encoding="utf-8")),
+            )
         result = generate_report(
             args.input,
             args.output_dir,
