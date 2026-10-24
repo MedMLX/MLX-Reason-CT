@@ -61,7 +61,7 @@ line-length = 100
 extend-exclude = ["src/mlx_reason_ct/gated_delta.py"]
 
 [tool.ruff.lint]
-extend-select = ["TID251", "ANN401"]
+extend-select = ["TID251", "TID252", "ANN401"]
 select = ["E", "F", "I", "UP"]
 
 [tool.pyright]
@@ -75,6 +75,9 @@ reportUnnecessaryTypeIgnoreComment = "error"
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+
+[tool.ruff.lint.flake8-tidy-imports]
+ban-relative-imports = "all"
 
 [tool.ruff.lint.flake8-tidy-imports.banned-api]
 "typing.Any" = {msg = "Use a precise type and parse untyped values at the boundary."}
