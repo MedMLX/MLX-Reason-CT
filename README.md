@@ -15,6 +15,11 @@ MLX port by **Joseph Sandoval**.
 [Paper](https://arxiv.org/abs/2609.27511) ·
 [HF collection](https://huggingface.co/collections/josand/medmlx-mlx-reason-ct-6ac85b2663d2ca5df1887db2)
 
+Part of [MedMLX](https://github.com/MedMLX).
+[Technical notes](docs/technical.md)
+
+[Quick start](#quick-start) · [Input and output](#input-and-output) · [Technical details](#technical-details) · [License](#license)
+
 ## Requirements
 
 Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
@@ -62,7 +67,7 @@ For a generated input with no patient data, follow the
 [synthetic CT walkthrough](docs/synthetic-walkthrough.md). It covers installation,
 bundle verification, input generation and completion checks.
 
-## Python
+### Python
 
 ```python
 from mlx_reason_ct.medmlx import run
