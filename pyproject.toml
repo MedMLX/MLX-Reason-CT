@@ -8,13 +8,13 @@ version = "0.3.1"
 description = "Native MLX port of NVIDIA NV-Reason-CT for 3D CT reasoning on Apple Silicon"
 readme = "README.md"
 requires-python = ">=3.13,<3.15"
-license = "Apache-2.0"
+license = "Apache-2.0 AND MIT AND BSD-3-Clause AND LicenseRef-OpenMDW-1.1"
 license-files = ["LICENSE", "THIRD_PARTY_NOTICES.md"]
 authors = [{name = "Joseph Sandoval"}]
 classifiers = ["Operating System :: MacOS :: MacOS X"]
 keywords = ["mlx", "apple-silicon", "ct", "medical-imaging", "nv-reason-ct"]
 dependencies = [
-  "medmlx-core==0.2.1",
+  "medmlx-core==0.2.2",
   "numpy==2.3.5",
   "scipy==1.18.1",
   "nibabel==5.4.2",
@@ -34,7 +34,7 @@ mlx-reason-ct = "mlx_reason_ct.medmlx:MODEL"
 [project.urls]
 Homepage = "https://github.com/MedMLX/MLX-Reason-CT"
 Repository = "https://github.com/MedMLX/MLX-Reason-CT"
-Documentation = "https://github.com/MedMLX/MLX-Reason-CT/blob/v0.2.4/docs/usage.md"
+Documentation = "https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/technical.md"
 Issues = "https://github.com/MedMLX/MLX-Reason-CT/issues"
 Weights = "https://huggingface.co/josand/MLX-Reason-CT"
 
@@ -43,6 +43,14 @@ dev = ["ruff==0.15.21", "pytest==9.1.1", "pyright==1.1.414"]
 
 [tool.hatch.metadata]
 allow-direct-references = true
+
+[tool.hatch.build]
+exclude = [
+  "**/[Aa][Gg][Ee][Nn][Tt][Ss].[Mm][Dd]",
+  "**/[Cc][Ll][Aa][Uu][Dd][Ee].[Mm][Dd]",
+  "**/[Ss][Kk][Ii][Ll][Ll].[Mm][Dd]",
+  "**/.*",
+]
 
 [tool.hatch.build.targets.wheel]
 packages = ["src/mlx_reason_ct"]

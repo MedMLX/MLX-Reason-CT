@@ -11,12 +11,12 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 MLX port by **Joseph Sandoval**.
 [Releases](https://github.com/MedMLX/MLX-Reason-CT/releases) ·
 [Weights](https://huggingface.co/josand/MLX-Reason-CT) ·
-[Usage](docs/usage.md) ·
+[Usage](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md) ·
 [Paper](https://arxiv.org/abs/2609.27511) ·
 [HF collection](https://huggingface.co/collections/josand/medmlx-mlx-reason-ct-6ac85b2663d2ca5df1887db2)
 
 Part of [MedMLX](https://github.com/MedMLX).
-[Technical notes](docs/technical.md)
+[Technical notes](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/technical.md)
 
 [Quick start](#quick-start) · [Input and output](#input-and-output) · [Technical details](#technical-details) · [License](#license)
 
@@ -57,14 +57,14 @@ mlx-reason-ct report \
 
 To ask a question about the CT, set `--prompt` to your question. Use
 `--anatomy-region none` for the processor's plain centered crop and `--history`
-for follow-up questions about the same CT; see [usage](docs/usage.md).
+for follow-up questions about the same CT; see [usage](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md).
 
 For source development, clone
 [this repository](https://github.com/MedMLX/MLX-Reason-CT) and run `make env`;
 use `uv run mlx-reason-ct` for the commands above.
 
 For a generated input with no patient data, follow the
-[synthetic CT walkthrough](docs/synthetic-walkthrough.md). It covers installation,
+[synthetic CT walkthrough](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/synthetic-walkthrough.md). It covers installation,
 bundle verification, input generation and completion checks.
 
 ### Python
@@ -80,7 +80,7 @@ Takes the same options as the CLI (`prompt`, `anatomy_region`, `enable_thinking`
 `precision`, `overwrite`, `history`; `anatomy_region=None` for the centered crop).
 The model is also discoverable by
 [medmlx](https://github.com/MedMLX/medmlx) as `mlx-reason-ct`. Full runner
-contract in [docs/usage.md](docs/usage.md#medmlx-runner).
+contract in [docs/usage.md](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md#medmlx-runner).
 
 ## Input and output
 
@@ -104,8 +104,8 @@ report in both text and JSON, while preserving reasoning and nonempty answer ele
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining. See the
-[source and arithmetic contracts](docs/technical.md) and [usage guide](docs/usage.md).
-Seeded test references are recorded on darwin-arm64; [verification scope](docs/verification.md) explains their bounds
+[source and arithmetic contracts](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/technical.md) and [usage guide](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/usage.md).
+Seeded test references are recorded on darwin-arm64; [verification scope](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/docs/verification.md) explains their bounds
 and what they do not establish.
 
 Version 0.2.3 includes faster source-BF16 projection and attention kernels.
@@ -121,6 +121,8 @@ Outputs require human review.
 
 ## License
 
-Code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE), Joseph Sandoval.
-Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LICENSE), NVIDIA CORPORATION & AFFILIATES.
-[Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
+Original port contributions: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/LICENSE), Joseph Sandoval.
+NVIDIA model architecture, processor policy and weights retain
+[OpenMDW-1.1](https://huggingface.co/nvidia/NV-Reason-CT/blob/386b93e034983f6c1fc841a43833a1b6a0cd9c13/LICENSE), NVIDIA CORPORATION & AFFILIATES.
+Bundled Apple and PyTorch-derived portions retain MIT and BSD-3-Clause terms.
+[Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/v0.3.1/THIRD_PARTY_NOTICES.md).

@@ -180,15 +180,15 @@ wheels = [
 
 [[package]]
 name = "medmlx-core"
-version = "0.2.1"
+version = "0.2.2"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "mlx" },
     { name = "numpy" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/77/e4/ba3679c98554cbe474d2d5576cba488f864e17b54a24af63a0a710b923a1/medmlx_core-0.2.1.tar.gz", hash = "sha256:27ea5d6e78ffbd0419f2d49c19af3b5f9624a62799a7b224c6a3c27f5afc73f5", size = 316335, upload-time = "2026-10-20T22:55:52.119Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/57/b1/9c410c525781349174fa563e786c254f860bd2343434b402f60626f83427/medmlx_core-0.2.2.tar.gz", hash = "sha256:7a2429bf54257942c652acfe01cfc1bf16f8df6da1b700d5332a62028d66d802", size = 47124, upload-time = "2026-10-24T17:53:35.091Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/5c/00/ac4b2e1b47777f42c2c32e3eaa37ca28dfd8785fd820337be77427b886df/medmlx_core-0.2.1-py3-none-any.whl", hash = "sha256:2a6307315f34f2ae1eef0dbba00385209f9f523d563dad18219d9b057f2e7794", size = 58865, upload-time = "2026-10-20T22:55:51.041Z" },
+    { url = "https://files.pythonhosted.org/packages/fb/f4/e4fbbc0951d0c541f3fab1995e5e12def06662f381ffe06366659bc52846/medmlx_core-0.2.2-py3-none-any.whl", hash = "sha256:df8f6de9f3f973b9a3286ee981b162e29246480f1a3a4727a6f0eedd56797b6a", size = 60236, upload-time = "2026-10-24T17:53:33.938Z" },
 ]
 
 [[package]]
@@ -250,7 +250,7 @@ dev = [
 requires-dist = [
     { name = "huggingface-hub", specifier = "==1.23.0" },
     { name = "jinja2", specifier = "==3.1.6" },
-    { name = "medmlx-core", specifier = "==0.2.1" },
+    { name = "medmlx-core", specifier = "==0.2.2" },
     { name = "mlx", marker = "platform_machine == 'arm64' and sys_platform == 'darwin'", specifier = "==0.32.4" },
     { name = "nibabel", specifier = "==5.4.2" },
     { name = "numpy", specifier = "==2.3.5" },
