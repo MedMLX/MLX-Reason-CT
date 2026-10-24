@@ -62,8 +62,10 @@ def _sample(values: np.ndarray, grid: np.ndarray) -> np.ndarray:
 def resample_ct(values: np.ndarray, mapping: np.ndarray, shape: tuple[int, ...]) -> np.ndarray:
     """Sample a finite XYZ FP32 HU volume using the source output-to-input map.
 
-    ``mapping`` maps output voxel centers to input voxel centers. Normalization
-    uses align_corners=False; out-of-bounds locations clamp to the input border.
+    ``mapping`` is a 4x4 matrix mapping output voxel-center indices to input
+    voxel-center indices. ``shape`` is the output ``(X, Y, Z)`` shape; the result is
+    a float32 array of that shape. Normalization uses align_corners=False;
+    out-of-bounds locations clamp to the input border.
     Eight output planes bound temporary coordinate and interpolation storage.
     """
     theta = _multiply4(

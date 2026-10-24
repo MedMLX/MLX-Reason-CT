@@ -20,6 +20,7 @@ class ReportFiles:
     directory: Path
 
     def outputs(self) -> dict[str, str]:
+        """Return the ``report``, ``response`` and ``run`` file paths as POSIX strings."""
         return {
             "report": (self.directory / "report.txt").as_posix(),
             "response": (self.directory / "model_response.json").as_posix(),
@@ -27,6 +28,10 @@ class ReportFiles:
         }
 
     def require_writable(self, *, overwrite: bool) -> None:
+        """Raise ``InvalidInputError`` if the directory or an output path is unusable.
+
+        An existing output file (or symlink) is an error unless ``overwrite`` is true.
+        """
         if self.directory.exists() and not self.directory.is_dir():
             raise InvalidInputError(f"output_dir is not a directory: {self.directory}")
         for value in self.outputs().values():
@@ -51,6 +56,20 @@ def split_thinking(response: str) -> tuple[str | None, str]:
 
 
 def save_response(output_dir: Path, response: str, metrics: Mapping[str, object]) -> dict[str, str]:
+    """Write ``report.txt`` and ``model_response.json`` from decoded model text.
+
+    ``response`` is split into optional thinking text and the answer, and a
+    trailing empty ``<answer></answer>`` element is removed from the answer.
+    ``metrics`` is stored under ``generation`` and must contain
+    ``terminated_by_eos``. The JSON record always sets ``requires_human_review``.
+
+    Returns:
+        The ``report`` and ``response`` paths.
+
+    Raises:
+        ModelExecutionError: the answer is empty or generation did not end at an
+            EOS token. Both files are written before this is raised.
+    """
     outputs = ReportFiles(output_dir).outputs()
     report_path = Path(outputs["report"])
     response_path = Path(outputs["response"])

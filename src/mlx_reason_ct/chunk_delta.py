@@ -53,7 +53,21 @@ def chunk_delta(
     *,
     source_bfloat16: bool = False,
 ) -> tuple[Array, Array]:
-    """Consume normalized/scaled Q/K and log decay; state uses MLX-LM's V,K order."""
+    """Run the chunked gated-delta recurrence over ``T`` tokens in 64-token chunks.
+
+    Args:
+        q: normalized and scaled queries, ``(B, T, Hk, 128)``.
+        k: normalized keys, ``(B, T, Hk, 128)``. Repeated to ``Hv`` heads.
+        v: values, ``(B, T, Hv, 128)``.
+        g: log decay (non-positive), ``(B, T, Hv)``.
+        beta: write strength, ``(B, T, Hv)``.
+        state: recurrent state ``(B, Hv, V, K)`` (MLX-LM's V, K order).
+        source_bfloat16: use the source-BF16 exponential and reduction kernels.
+
+    Returns:
+        ``(output, state)``: float32 ``(B, T, Hv, 128)`` and the updated state in
+        the same layout as the input.
+    """
     from mlx_reason_ct import source_arithmetic
 
     exponential = source_arithmetic.exp if source_bfloat16 else mx.exp
@@ -68,6 +82,7 @@ def chunk_delta(
         x = mx.pad(x, [(0, 0), (0, 0), (0, padding), (0, 0)])
         return mx.reshape(x, (batch, heads, count, 64, x.shape[-1]))
 
+    # Pad T to a multiple of 64 with zeros; padded rows are sliced off the output.
     q, k, v = chunks(q), chunks(k), chunks(v)
     beta = chunks(beta[..., None])
     g = source_cumsum(chunks(g[..., None])[..., 0])
@@ -76,6 +91,7 @@ def chunk_delta(
     kb, vb = k * beta, v * beta
     attn = mx.where(mx.eye(64, dtype=mx.bool_) | ~lower, 0, -(kb @ k.swapaxes(-1, -2)) * decay)
     # This triangular recurrence intentionally matches the source reduction order.
+    # Each row is evaluated so the lazy graph does not grow across the 63 steps.
     for i in range(1, 64):
         row = attn[..., i, :i]
         product = row[..., :, None] * attn[..., :i, :i]

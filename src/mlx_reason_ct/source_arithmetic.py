@@ -28,6 +28,8 @@ from mlx_reason_ct.runtime import import_mlx
 
 mx: Mlx = import_mlx()
 ASSETS = Path(__file__).with_name("source_arithmetic_assets")
+# (in_features, out_features) of single-row decoder projections mapped to the number of
+# lanes the source GPU kernel was observed to use; see ``cached_projection``.
 OBSERVED_LANES = {
     (2560, 32): 32,
     (2560, 1024): 16,
@@ -103,6 +105,7 @@ def _elementwise(name: str, values: Array, extra: list[Array] | None = None) -> 
 
 
 def rsqrt(values: Array) -> Array:
+    """Elementwise FP32 reciprocal square root using the encoded source instruction table."""
     return _elementwise("rsqrt", values, [_table("rsqrt")])
 
 
@@ -111,18 +114,22 @@ def _exp_tables() -> list[Array]:
 
 
 def exp(values: Array) -> Array:
+    """Elementwise FP32 exponential using the encoded source exp2 tables."""
     return _elementwise("exp", values, _exp_tables())
 
 
 def log1p(values: Array) -> Array:
+    """Elementwise FP32 ``log(1 + x)`` Metal kernel reproducing the source's log1p."""
     return _elementwise("log1p", values)
 
 
 def silu(values: Array) -> Array:
+    """SiLU computed in FP32 from the encoded source table, cast back to the input dtype."""
     return _activation(values, False)
 
 
 def sigmoid(values: Array) -> Array:
+    """Sigmoid computed in FP32 from the encoded source table, cast back to the input dtype."""
     return _activation(values, True)
 
 
@@ -140,7 +147,12 @@ def _activation(values: Array, sigmoid_mode: bool) -> Array:
 
 
 def mean_square(square: Array) -> Array:
+    """Mean over the last axis of already-squared FP32 values, in the source's tree order.
+
+    The last-axis width must be 128, 256 or 2560. Returns float32 ``(..., 1)``.
+    """
     width = square.shape[-1]
+    # FP32 bit pattern of 1 / width, applied once after the tree sum.
     factor = {128: 0x3C000000, 256: 0x3B800000, 2560: 0x39CCCCCD}[width]
     rows = square.size // width
     # Pinned ATen Reduce.cuh vectorizes four inputs per lane, then chooses
@@ -161,6 +173,7 @@ def mean_square(square: Array) -> Array:
 
 
 def sum_square(square: Array) -> Array:
+    """Sum already-squared FP32 values over a last axis of width 128 into ``(..., 1)``."""
     rows = square.size // 128
     return kernel("square_sum")(
         inputs=[square],
@@ -173,6 +186,7 @@ def sum_square(square: Array) -> Array:
 
 
 def sum_product(product: Array) -> Array:
+    """Sum ``(..., rows, W)`` products over the second-to-last axis into ``(..., W)``."""
     width = product.shape[-1]
     shape = (*product.shape[:-2], width)
     outputs = product.size // width
@@ -192,6 +206,12 @@ def _operand(values: Array) -> Array:
 
 
 def operand_flags(*operands: Array) -> Array:
+    """Flag special values in two operands.
+
+    Returns a ``(1,)`` uint32 that is nonzero if either operand holds inf, NaN or a
+    subnormal. Exactly two operands are expected. Flagged projections skip the fast
+    alignment path.
+    """
     flags = [
         kernel("operand_check")(
             inputs=[values],
@@ -210,7 +230,23 @@ def operand_flags(*operands: Array) -> Array:
 def projection(
     x: Array, weight: Array, *, bias: Array | None = None, slices: int = 1, sliced: bool = False
 ) -> Array:
-    """Measured K8 HMMA carries and source BF16 epilogue/partition stores."""
+    """Measured K8 HMMA carries and source BF16 epilogue/partition stores.
+
+    Args:
+        x: activations ``(B, T, K)``, BF16 or FP32.
+        weight: ``(N, K)`` weight, BF16 or FP32.
+        bias: optional ``(N,)`` bias, added in the kernel.
+        slices: number of equal K partitions; partial results are stored between
+            partitions as in the source.
+        sliced: require partition widths that are multiples of 64 instead of 8.
+
+    Returns:
+        BF16 ``(B, T, N)``.
+
+    Raises:
+        ValueError: ``K`` does not split into ``slices`` equal partitions whose width
+            is a multiple of 8 (64 when ``sliced``).
+    """
     x, weight = _operand(x), _operand(weight)
     length, width = x.shape[-1], weight.shape[0]
     part_width = length // slices
@@ -257,6 +293,10 @@ def projection(
 
 
 def cached_projection(x: Array, weight: Array) -> Array:
+    """Single-token projection ``(1, 1, K)`` by ``(N, K)`` weight, returned as BF16 ``(1, 1, N)``.
+
+    ``(K, N)`` must be a key of ``OBSERVED_LANES``.
+    """
     width, length = weight.shape
     lanes = OBSERVED_LANES[(length, width)]
     return kernel("cached_projection")(
@@ -270,7 +310,11 @@ def cached_projection(x: Array, weight: Array) -> Array:
 
 
 def convolution(x: Array, weight: Array) -> Array:
-    """C1 padded to C8 inside each source Conv3D tap's HMMA operation."""
+    """C1 padded to C8 inside each source Conv3D tap's HMMA operation.
+
+    ``x`` is the flattened patch matrix ``(1, 13824, 512)`` and ``weight`` the
+    ``(864, 512)`` patch projection; returns BF16 ``(1, 13824, 864)`` without bias.
+    """
     parts: list[Array] = []
     for start in range(0, x.shape[1], 128):
         part = x[:, start : start + 128]
@@ -289,6 +333,11 @@ def convolution(x: Array, weight: Array) -> Array:
 
 
 def layernorm(values: Array, weight: Array, bias: Array, eps: float) -> Array:
+    """LayerNorm over the last axis with FP32 statistics, returned as BF16.
+
+    ``weight`` and ``bias`` have the last-axis width; ``values`` is any shape ending
+    in that width.
+    """
     fp = values.astype(mx.float32)
     width, rows = fp.shape[-1], fp.size // fp.shape[-1]
     reciprocal = mx.array(
@@ -319,6 +368,10 @@ def layernorm(values: Array, weight: Array, bias: Array, eps: float) -> Array:
 
 
 def vision_constants() -> tuple[Array, Array]:
+    """Return the source's FP32 vision rotary ``(sin, cos)``, each ``(13824, 72)``.
+
+    Rows follow the 24 x 24 x 24 patch grid in ``(Z, Y, X)`` row-major order.
+    """
     values = _decoded("vision_rotary").view(np.float32)
     coords = np.indices((24, 24, 24), dtype=np.int32).reshape(3, -1).T
     sin, cos = [
@@ -330,6 +383,19 @@ def vision_constants() -> tuple[Array, Array]:
 def gated_delta(
     q: Array, k: Array, v: Array, decay: Array, beta: Array, state: Array
 ) -> tuple[Array, Array]:
+    """One-token gated-delta recurrence for batch size 1.
+
+    Args:
+        q: ``(1, 1, Hk, 128)`` normalized and scaled queries.
+        k: ``(1, 1, Hk, 128)`` normalized keys.
+        v: ``(1, 1, 32, 128)`` values.
+        decay: per-head decay factor (the exponential of the log decay), ``(1, 1, 32)``.
+        beta: ``(1, 1, 32)`` write strength.
+        state: ``(1, 32, V, K)`` recurrent state in (V, K) order.
+
+    Returns:
+        ``(output, state)``: float32, shaped like ``v`` and ``state``.
+    """
     output, updated = kernel("recurrence")(
         inputs=[q, k, v, decay, beta, state.swapaxes(-1, -2)],
         template=[("Ratio", 32 // q.shape[2])],
@@ -342,7 +408,7 @@ def gated_delta(
 
 
 def _split_attention(q: Array, k: Array, v: Array) -> Array:
-    # Pinned source128-SM GQA dispatch; independently checked at every transition.
+    # Pinned source 128-SM GQA dispatch; independently checked at every transition.
     splits = (k.shape[2] + 255) // 256
     meta = mx.array([1, k.shape[2], 16, 4, 0, splits, 1], dtype=mx.int32)
     parts, lse, _ = kernel("split_attention")(
@@ -381,6 +447,20 @@ def _split_attention(q: Array, k: Array, v: Array) -> Array:
 
 
 def attention(q: Array, k: Array, v: Array, *, causal: bool, offset: int) -> Array:
+    """BF16 attention with the source's K8 accumulation order.
+
+    Args:
+        q: ``(B, heads, Tq, D)``; ``D`` is 72 (vision) or 256 (decoder).
+        k: ``(B, kv_heads, Tk, D)``.
+        v: ``(B, kv_heads, Tk, D)``.
+        causal: mask keys after each query's position.
+        offset: number of keys preceding the first query.
+
+    Returns:
+        BF16 array shaped like ``q``. Queries are processed in blocks of 64 (vision)
+        or 128 (decoder). A single-token decoder query against 13,824-16,384 cached
+        keys uses the source's split-key dispatch.
+    """
     if (
         q.shape == (1, 16, 1, 256)
         and k.shape[:2] == (1, 4)

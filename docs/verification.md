@@ -55,14 +55,12 @@ All generated reports require human review.
 
 ## Historical FP32 comparison
 
-The recorded task-output comparison at native revision
-`eb2c10baf688b32eee082dbb8973e88b4555db7a` references
-`Med-MLX/results/runs/nv-reason-ct.json` and
-`Med-MLX/results/reference/nv-reason-ct.json`, with its configuration in
-`Med-MLX/models/registry.yaml`. It records greedy-token agreement against the
-source CPU FP32 profile on the recorded case. This historical result does not
-establish original CUDA BF16 parity or diagnostic accuracy. The model/checkpoint
-revision remains pinned in [technical notes](technical.md).
+A task-output comparison recorded outside this repository at native revision
+`eb2c10baf688b32eee082dbb8973e88b4555db7a` records greedy-token agreement against
+the source CPU FP32 profile on one recorded case. Its result files are not
+included here. This historical result does not establish original CUDA BF16
+parity or diagnostic accuracy. The model/checkpoint revision remains pinned in
+[technical notes](technical.md).
 
 ## Source-BF16 optimization measurement (2026-10-09)
 
@@ -89,19 +87,19 @@ statistics or timings of the published wheel.
 
 All recorded vision features, projected embeddings, final eight prefill hidden
 states and consumed cached logits are bitwise identical before and after this
-change. The vision and hidden boundaries also match the CUDA source exactly;
-cached source-logit comparisons pass the unchanged `atol=0.125`, `rtol=0.01`,
-normalized RMSE `<=0.005` gates. Exact tokens and EOS termination are retained.
+change. On this one case, the vision and hidden boundaries also matched the
+recorded CUDA source values exactly; cached source-logit comparisons pass the
+unchanged `atol=0.125`, `rtol=0.01`, normalized RMSE `<=0.005` gates. The CUDA
+source values are not included in this repository. Exact tokens and EOS termination are retained.
 Cached peak MLX allocation is approximately 12.37 GiB in both native runs.
 
-The initial fast-K8/batching uncached pass was interrupted by a system GPU reset;
-macOS named WebKit in a `CDM Kill timeout` report and MLX received an
-innocent-victim error.
+The initial fast-K8/batching uncached pass was interrupted by a system GPU reset
+(MLX reported an innocent-victim error).
 A fresh-model retry reused the verified native vision features and first token,
 then rebuilt the full prefix without a decoder cache. It reached EOS with
 bitwise-unchanged native logits, zero source tolerance violations and normalized
 RMSE 0.0000297. This is recovered continuation evidence, not an uninterrupted
-full-model qualification run; both receipts are retained.
+full-model qualification run.
 
 Isolated attention probes used one warmup and seven alternating synchronized
 samples at the existing launch sizes: median speedups were 1.26 times for vision

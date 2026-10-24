@@ -25,7 +25,25 @@ ndimage: Ndimage = cast(Ndimage, import_module("scipy.ndimage"))
 
 @dataclass(frozen=True)
 class CTCrop:
-    """HU crop with explicit source and resampled/padded voxel geometry."""
+    """HU crop with explicit source and resampled/padded voxel geometry.
+
+    Array axes are ``(X, Y, Z)`` and oriented LPS (index increases toward patient
+    left, posterior, superior). All affines map voxel indices to NIfTI RAS
+    millimeters.
+
+    Attributes:
+        values: float32 HU crop, shape equal to the requested ROI.
+        affine: voxel-to-RAS affine of ``values``.
+        source_affine: affine of the input file as read.
+        resampled_affine: affine of the LPS-oriented, resampled volume before padding.
+        resampled_shape: shape of that resampled volume.
+        padding: per-axis ``(before, after)`` voxel counts of -1000 HU air padding
+            added to reach the ROI size.
+        start: crop origin within the padded array, per axis.
+        bounds: ``(low, high)`` inclusive z indices of the selected region in the
+            padded array, or ``None`` when no region was requested or the
+            heuristic fell back to the superior-edge crop.
+    """
 
     values: np.ndarray
     affine: np.ndarray
@@ -37,6 +55,7 @@ class CTCrop:
     bounds: tuple[int, int] | None
 
     def geometry(self) -> dict[str, object]:
+        """Return the JSON-serializable geometry record stored in ``run.json``."""
         return {
             "source_affine_ras_mm": self.source_affine.tolist(),
             "resampled_affine_ras_mm": self.resampled_affine.tolist(),
@@ -59,7 +78,20 @@ def spacing_grid(
     *,
     keep_fraction: float = 0.1,
 ) -> tuple[tuple[int, ...], np.ndarray]:
-    """MONAI's non-diagonal voxel-center extent, including its spacing tolerance."""
+    """Compute the output grid MONAI uses for non-diagonal resampling to ``spacing``.
+
+    Args:
+        shape: input voxel counts per axis.
+        affine: 4x4 voxel-to-world affine of the input, in millimeters.
+        spacing: target voxel size in millimeters per axis.
+        keep_fraction: an axis whose current spacing is within this fraction of
+            the target (plus 1e-3 mm) keeps its current spacing instead of the
+            target.
+
+    Returns:
+        ``(size, destination_affine)``: output voxel counts and the 4x4 affine
+        of the output grid, covering the input's voxel-center extent.
+    """
     rzs = affine[:3, :3]
     original = np.linalg.norm(rzs, axis=0)
     target = np.asarray(spacing, dtype=np.float64)
@@ -97,7 +129,18 @@ def lung_air_bounds(
 
     This intensity heuristic is a crop selector, never a segmentation or diagnosis.
     Thresholds and connectivity are the pinned NVIDIA processor's policy.
+
+    Args:
+        values: ``(X, Y, Z)`` HU array oriented LPS, so z increases superiorly.
+        spacing: voxel size in millimeters per axis.
+
+    Returns:
+        ``(body_low_z, air_low_z, air_high_z)`` voxel indices: the lowest slice
+        with HU above -500, and the inclusive z range of the selected air
+        clusters. ``None`` if there is no body, no enclosed air, or the selected
+        air totals under 250 mL.
     """
+    # Enclosed air is what a per-axial-slice hole fill adds to the body mask.
     body = values > -500
     body_z = np.flatnonzero(body.any(axis=(0, 1)))
     if not len(body_z):
@@ -110,6 +153,9 @@ def lung_air_bounds(
         return None
     sizes = np.bincount(labels.ravel())
     sizes[0] = 0
+    # Keep air clusters at least a tenth the size of the largest, start from the most
+    # superior one (ties broken by size), and join others whose gap is at most 40 mm
+    # and whose combined z extent stays within 500 mm.
     candidates = np.flatnonzero(sizes >= 0.1 * sizes.max())
     summaries: list[tuple[int, int, int, int]] = []
     for component in candidates[candidates != 0]:
@@ -130,6 +176,7 @@ def lung_air_bounds(
         z_min, z_max = next_low, max(z_max, high)
     lung = np.isin(labels, selected)
     zs = np.flatnonzero(lung.any(axis=(0, 1)))
+    # Drop air more than 500 mm below the superior edge.
     low = max(int(zs.min()), int(zs.max()) - max(1, int(np.ceil(500 / spacing[2]))) + 1)
     lung[:, :, :low] = False
     zs = np.flatnonzero(lung.any(axis=(0, 1)))
@@ -147,6 +194,12 @@ def anatomy_crop(
 ) -> tuple[tuple[int, ...], tuple[int, int] | None]:
     """Choose the pinned chest/abdomen crop, or a plain centered crop, in an
     already padded LPS HU array.
+
+    Returns ``(start, bounds)``: the crop origin per ``(X, Y, Z)`` axis and the
+    selected inclusive z range (``None`` for ``region=None`` or on fallback).
+    Raises ``ValueError`` for an unknown region or an array smaller than ``roi``.
+    If a chest or abdomen region cannot be located, a ``RuntimeWarning`` is
+    issued and the z origin is set so the crop ends at the superior edge.
 
     ``region=None`` matches the pinned processor's own fallback when no
     anatomy region is requested: a centered crop on every axis, with no lung
@@ -171,6 +224,8 @@ def anatomy_crop(
         if region == "chest":
             bounds = (lung_low, lung_high)
         else:
+            # Abdomen: a window of up to 300 mm, clipped at the body base, whose top is
+            # 100 mm above the lowest selected lung air.
             high = min(values.shape[2] - 1, lung_low + int(np.ceil(100 / spacing[2])))
             low = max(body_low, high - int(np.ceil(300 / spacing[2])) + 1)
             if low <= high:
@@ -198,7 +253,16 @@ def load_anatomy_ct(
     spacing: tuple[float, float, float] = (2.0, 2.0, 2.0),
     roi: tuple[int, int, int] = (192, 192, 192),
 ) -> CTCrop:
-    """Read, orient, resample, air-pad and select a CT crop on the CPU."""
+    """Read, orient, resample, air-pad and select a CT crop on the CPU.
+
+    The volume is reoriented to LPS array axes, resampled to ``spacing`` (mm)
+    when its grid differs, padded with -1000 HU to at least ``roi``, and cropped
+    to ``roi`` voxels per ``(X, Y, Z)`` axis.
+
+    Raises:
+        InvalidInputError: the NIfTI file is unusable (see ``load_ct``).
+        ValueError: ``region`` is not ``None``, ``"chest"`` or ``"abdomen"``.
+    """
     nib = cast(Nibabel, import_module("nibabel"))
     values, source_affine = load_ct(path)
     if values.ndim != 3 or not np.isfinite(values).all():

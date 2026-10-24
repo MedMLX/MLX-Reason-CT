@@ -56,8 +56,8 @@ inference path. The package initializer and MedMLX declaration remain lazy.
 
 The multi-token prefill retains Transformers' 64-token chunk algebra. Its
 Sklansky scan, activation formulas, normalization, projection stores and
-single-token recurrence preserve the pinned source arithmetic. Source operator
-source details include PyTorch 2.13.0 revision
+single-token recurrence preserve the pinned source arithmetic. Operator source
+pins include PyTorch 2.13.0 revision
 `cf30153c4c131c8164ee7798e5022d810682e2cb`, the Flash source submodule
 `6c4f74fb338e0c3cdb07ac6f5eab5f54fc367c15`, and MLX 0.32.2 layout helpers.
 MIT/BSD notices remain in `THIRD_PARTY_NOTICES.md`.

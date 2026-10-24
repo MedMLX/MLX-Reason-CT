@@ -11,6 +11,25 @@ from mlx_reason_ct.errors import InvalidInputError, MissingDependencyError
 
 
 def load_ct(path: Path) -> tuple[FloatArray, Affine]:
+    """Load one scalar 3D CT volume and its voxel-to-world affine.
+
+    Args:
+        path: NIfTI file (``.nii`` or ``.nii.gz``) holding Hounsfield-unit values.
+
+    Returns:
+        ``(values, affine)``. ``values`` is a finite float32 array in the file's
+        storage axis order ``(i, j, k)``, with nibabel's slope/intercept scaling
+        applied and no reorientation. ``affine`` is a float64 4x4 matrix mapping
+        voxel indices to NIfTI RAS world coordinates in millimeters. The sform is
+        used when coded, otherwise the qform.
+
+    Raises:
+        MissingDependencyError: nibabel is not installed.
+        InvalidInputError: the file is unreadable, has no coded qform or sform,
+            has qform and sform that disagree (after unit scaling), has a
+            non-finite, non-affine or singular transform, or is not a finite
+            3D volume.
+    """
     try:
         nib = cast(Nibabel, import_module("nibabel"))
     except ImportError as error:
@@ -25,7 +44,8 @@ def load_ct(path: Path) -> tuple[FloatArray, Affine]:
     sform, scode = image.get_sform(coded=True)
     if not qcode and not scode:
         raise InvalidInputError("NIfTI image has no coded qform or sform spatial transform")
-    # Normalize physical units before comparing forms and resampling in mm.
+    # Normalize physical units before comparing forms and resampling in mm. The
+    # scale applies to the affine's first three rows, translation included.
     scale = {"unknown": 1.0, "mm": 1.0, "meter": 1000.0, "micron": 0.001}[
         image.header.get_xyzt_units()[0]
     ]

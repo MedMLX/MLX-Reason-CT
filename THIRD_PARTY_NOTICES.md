@@ -1,7 +1,6 @@
 # Third-party notices
 
 MLX-Reason-CT
-Copyright (c) 2026 Joseph Sandoval
 
 The original contributions to this standalone port are licensed under Apache-2.0.
 This does not replace the licenses or notices of upstream portions or model materials.

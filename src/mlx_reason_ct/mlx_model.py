@@ -38,21 +38,35 @@ if not TYPE_CHECKING:
 
 @dataclass
 class DecoderCache:
-    """One request's full-attention KV and linear-attention convolution/state."""
+    """One request's full-attention KV and linear-attention convolution/state.
+
+    ``layers`` holds one dict per decoder layer. Full-attention layers store
+    ``k`` and ``v`` of shape ``(B, 4, tokens, 256)``. Linear-attention layers store
+    ``conv`` of shape ``(B, 3, 8192)`` (the last three pre-convolution inputs) and
+    ``recurrent`` of shape ``(B, 32, 128, 128)`` in (V, K) order. ``offset`` is the
+    number of tokens already decoded.
+    """
 
     layers: list[dict[str, Array]] = field(default_factory=lambda: [{} for _ in range(32)])
     offset: int = 0
 
     @property
     def nbytes(self) -> int:
+        """Total bytes held by all cached arrays."""
         return sum(int(array.nbytes) for layer in self.layers for array in layer.values())
 
     def arrays(self) -> list[Array]:
+        """All cached arrays, for evaluation or size accounting."""
         return [array for layer in self.layers for array in layer.values()]
 
 
 class NativeModel:
-    """Pinned 3D network with bounded attention and feed-forward workspaces."""
+    """Pinned 3D network with bounded attention and feed-forward workspaces.
+
+    ``precision`` is a native profile name (``float32``, ``bfloat16`` or
+    ``source_bfloat16``), not the public API name; see the module docstring.
+    Weights are loaded from the converted FP32 shards and cast to the profile dtype.
+    """
 
     def __init__(self, model_dir: Path, *, precision: str = "float32") -> None:
         if precision not in {"float32", "bfloat16", "source_bfloat16"}:
@@ -68,6 +82,7 @@ class NativeModel:
             if value.dtype != mx.float32:
                 raise InvalidInputError(f"Native cache must store FP32 tensors: {name}")
             self.weights[name] = value.astype(self.dtype)
+        # Materialize the lazily loaded and cast weights once, up front.
         mx.eval(*self.weights.values())
         self.delta = gated_delta
         self.eos_ids: tuple[int, ...] = tuple(
@@ -108,6 +123,12 @@ class NativeModel:
         return nn.gelu(x.astype(mx.float32)).astype(x.dtype)
 
     def linear(self, x: Array, name: str, *, source_length: int | None = None) -> Array:
+        """Apply the named linear layer (``x @ W.T`` plus optional bias) to ``(B, T, in)``.
+
+        ``source_length`` is the row count of the unchunked activation. Callers that
+        process ``x`` in row chunks pass it so the source-BF16 projection partitioning,
+        which depends on the full row count, is chosen as in the unchunked source run.
+        """
         # BF16 vision operands accumulate into FP32 without an output downcast.
         # Decoder inputs stay FP32 to preserve cached/uncached consistency.
         if self.accumulate_float32 and name.startswith("model.vision3d."):
@@ -199,6 +220,12 @@ class NativeModel:
 
     @staticmethod
     def attention(q: Array, k: Array, v: Array, *, causal: bool, offset: int = 0) -> Array:
+        """Scaled dot-product attention on ``(B, heads, tokens, head_dim)`` arrays.
+
+        ``k`` and ``v`` may have fewer heads than ``q`` (grouped-query attention).
+        With ``causal``, query ``i`` attends to keys ``0..offset + i``, where
+        ``offset`` is the number of cached keys before the first query.
+        """
         if q.dtype == mx.bfloat16:
             return source_arithmetic.attention(q, k, v, causal=causal, offset=offset)
         # Bound the materialized score workspace even when a backend cannot fuse SDPA.
@@ -223,6 +250,21 @@ class NativeModel:
         return mx.concatenate(outputs, axis=2)
 
     def vision(self, pixels: Array) -> tuple[Array, Array]:
+        """Encode one CT crop into visual features and decoder-space embeddings.
+
+        Args:
+            pixels: ``(1, 1, 192, 192, 192)`` array, laid out ``(B, C, Z, Y, X)``.
+                Values are expected to be HU clipped to [-1000, 1000] and divided
+                by 1000; only the shape is checked.
+
+        Returns:
+            ``(features, embeddings)`` with shapes ``(1, 13824, 864)`` and
+            ``(1, 13824, 2560)``. Tokens follow the 24 x 24 x 24 patch grid in
+            ``(Z, Y, X)`` row-major order, one per 8 x 8 x 8 patch.
+
+        Raises:
+            InvalidInputError: ``pixels`` has any other shape.
+        """
         if pixels.shape != (1, 1, 192, 192, 192):
             raise InvalidInputError("NV-Reason-CT vision expects a single 192-cubed CZYX CT")
         prefix = "model.vision3d.sub_vision"
@@ -267,6 +309,7 @@ class NativeModel:
                 scale, h = scale.astype(mx.float32), h.astype(mx.float32)
             x = x + scale * h
             h = self.norm(x, p + ".norm2")
+            # Feed-forward rows are evaluated in 512-row chunks to bound workspace memory.
             chunks: list[Array] = []
             for start in range(0, h.shape[1], 512):
                 part = h[:, start : start + 512]
@@ -292,6 +335,12 @@ class NativeModel:
         return features, embeddings
 
     def rotary(self, x: Array, positions: Array) -> Array:
+        """Apply multimodal rotary embedding to ``x`` of shape ``(B, heads, T, 256)``.
+
+        ``positions`` is ``(3, B, T)``, one MRoPE index row per visual grid axis (see
+        ``VolumePrompt.position_ids``). Only the first 64 channels of each head are
+        rotated; the rest pass through.
+        """
         phase = positions.astype(mx.float32)[..., None] * self.text_inv_freq
         # Interleaved temporal/height/width sections 11/11/10, exactly as Qwen3.5.
         channels = [0 if j % 3 == 0 or j >= 30 and j % 3 == 2 else j % 3 for j in range(32)]
@@ -303,6 +352,13 @@ class NativeModel:
         return mx.concatenate([head * cos + rotated * sin, tail], axis=-1)
 
     def full_attention(self, x: Array, p: str, positions: Array, state: dict[str, Array]) -> Array:
+        """Gated causal attention (16 query heads, 4 KV heads, head dim 256).
+
+        ``x`` is ``(B, T, 2560)``; ``positions`` is ``(3, B, T)``. ``state`` holds
+        the layer's ``k``/``v`` cache and is extended in place with this call's keys
+        and values. The attention output is multiplied by the sigmoid of a per-channel
+        gate produced alongside the queries.
+        """
         batch, length, _ = x.shape
         q, gate = mx.split(
             mx.reshape(self.linear(x, p + ".q_proj"), (batch, length, 16, 512)), 2, axis=-1
@@ -332,6 +388,13 @@ class NativeModel:
         return self.linear(h * self.sigmoid(mx.reshape(gate, (batch, length, -1))), p + ".o_proj")
 
     def linear_attention(self, x: Array, p: str, state: dict[str, Array]) -> Array:
+        """Gated-delta linear attention (16 Q/K heads, 32 value heads, head dim 128).
+
+        ``x`` is ``(B, T, 2560)``. ``state`` holds the layer's ``conv`` and
+        ``recurrent`` entries (see ``DecoderCache``) and is updated in place. A
+        sequence of more than one token uses the chunked prefill; a single token
+        uses the one-step recurrence kernel.
+        """
         batch, length, _ = x.shape
         source_bf16 = self.precision == "source_bfloat16"
         exponential = source_arithmetic.exp if source_bf16 else mx.exp
@@ -418,25 +481,35 @@ class NativeModel:
         return self.linear(mx.reshape(h, (batch, length, -1)), p + ".out_proj")
 
     def embed(self, ids: Array) -> Array:
+        """Look up token embeddings for integer ``ids``."""
         value = self.weights["model.language_model.embed_tokens.weight"][ids]
         return value.astype(mx.float32) if self.accumulate_float32 else value
 
     def decode(
         self, embeddings: Array, positions: Array, cache: DecoderCache | None = None
     ) -> tuple[Array, DecoderCache]:
-        """Return all final hidden states; callers project only consumed tokens."""
+        """Return all final hidden states; callers project only consumed tokens.
+
+        ``embeddings`` is ``(B, T, 2560)`` and ``positions`` the matching ``(3, B, T)``
+        MRoPE indices. A new cache is created when none is given; otherwise the
+        given cache is extended in place and returned with its ``offset`` advanced
+        by ``T``.
+        """
         if cache is None:
             cache = DecoderCache()
         x = embeddings.astype(mx.float32 if self.accumulate_float32 else self.dtype)
         for i in range(32):
             p = f"model.language_model.layers.{i}"
             h = self.rms(x, p + ".input_layernorm")
+            # Every fourth layer uses full attention; the others use gated-delta
+            # linear attention.
             if (i + 1) % 4:
                 h = self.linear_attention(h, p + ".linear_attn", cache.layers[i])
             else:
                 h = self.full_attention(h, p + ".self_attn", positions, cache.layers[i])
             x = x + h
             h = self.rms(x, p + ".post_attention_layernorm")
+            # Feed-forward rows are evaluated in chunks to bound peak workspace memory.
             chunks: list[Array] = []
             for start in range(0, h.shape[1], 256):
                 part = h[:, start : start + 256]
@@ -462,6 +535,7 @@ class NativeModel:
         return x, cache
 
     def logits(self, hidden: Array) -> Array:
+        """Project hidden states to vocabulary logits with the tied embedding matrix."""
         weight = self.weights["model.language_model.embed_tokens.weight"]
         if self.accumulate_float32:
             weight = weight.astype(mx.float32)

@@ -53,12 +53,23 @@ RUNTIME_FILES = (
 
 
 def validate_source(model_dir: Path) -> None:
+    """Raise ``InvalidInputError`` unless every pinned upstream file is present."""
     for name in SOURCE_FILES:
         if not (model_dir / name).is_file():
             raise InvalidInputError(f"NV-Reason-CT pinned asset missing: {name}")
 
 
 def read_manifest(model_dir: Path) -> BundleManifest:
+    """Read and check a converted bundle's manifest against the pinned conversion.
+
+    Checks that the runtime files and every listed shard exist, and that engine,
+    revision and dtype match the pinned values. Shard contents are not hashed or
+    read.
+
+    Raises:
+        InvalidInputError: a runtime file or shard is missing, or the manifest
+            provenance or shard inventory differs from the pinned conversion.
+    """
     for name in RUNTIME_FILES:
         if not (model_dir / name).is_file():
             raise InvalidInputError(f"NV-Reason-CT runtime asset missing: {name}")
@@ -86,11 +97,26 @@ def read_manifest(model_dir: Path) -> BundleManifest:
 
 
 def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
-    """Convert offline using bounded CPU mappings; no model execution or network IO."""
+    """Convert offline using bounded CPU mappings; no model execution or network IO.
+
+    Every BF16 tensor of the pinned upstream snapshot in ``model_dir`` is expanded
+    to FP32 (exact) and written to ``output_dir/mlx`` as one shard per vision tower,
+    embedding, final norm and decoder layer. The 2D tower, mask token and tied LM
+    head are excluded. Runtime files are copied to ``output_dir``.
+
+    Returns:
+        Path of ``mlx/manifest.json``, written last.
+
+    Raises:
+        InvalidInputError: a pinned file is missing, a tensor is not finite BF16,
+            an unexpected tensor is present, or the tied LM head and embedding differ.
+    """
     safetensors = cast(Safetensors, import_module("safetensors.numpy"))
 
     validate_source(model_dir)
     source = model_dir / "model.safetensors"
+    # safetensors layout: little-endian u64 header size, JSON header, raw data. Header
+    # data_offsets are relative to the end of the header.
     with source.open("rb") as stream:
         size = struct.unpack("<Q", stream.read(8))[0]
         header = json.loads(stream.read(size))
@@ -101,6 +127,7 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
         if spec["dtype"] != "BF16":
             raise InvalidInputError(f"Pinned NV-Reason-CT tensor is not BF16: {name}")
         low, high = spec["data_offsets"]
+        # BF16 is the upper 16 bits of an FP32, so a 16-bit left shift is exact.
         raw = mapped[low:high].view("<u2").astype(np.uint32)
         result = (raw << 16).view(np.float32).reshape(spec["shape"])
         if not np.isfinite(result).all():
@@ -175,6 +202,7 @@ def convert_checkpoint(model_dir: Path, output_dir: Path) -> Path:
 
 
 def main() -> None:
+    """Command-line entry point for ``convert_checkpoint``."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("--source-dir", type=Path, required=True)
     parser.add_argument("--output-dir", type=Path, required=True)

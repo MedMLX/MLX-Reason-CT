@@ -7,7 +7,7 @@
   explicit BF16 arithmetic profiles retain the pinned source boundaries.
   Host preprocessing, conversion and bundle verification are not inference backends.
   No runtime fallback. Test references are recorded on darwin-arm64.
-- Port additions: Apache-2.0, Copyright (c) 2026 Joseph Sandoval.
+- Port additions: Apache-2.0.
   Preserve upstream OpenMDW-1.1, Apache-2.0, MIT and BSD notices.
 - Keep the package independent of application registries and project/run frameworks.
 - Preserve pinned checkpoint, tokenizer, template, geometry and numerical contracts.
@@ -60,3 +60,11 @@ Fix source contracts rather than adding suppressions or weakening diagnostics.
 Validation calls the provisioned project Python directly. Using `uv run --no-sync`
 as an environment guard was rejected because it can create an empty environment
 and select development tools from the host PATH.
+
+## Distribution contents
+
+Source releases include the runtime package, build metadata, README, required
+notices and build inputs through an explicit file list. Development scripts,
+fixture recorders, tests and benchmarks remain in Git for checkout workflows.
+Whole-checkout source releases were rejected because they can publish local
+validation and development files; renaming a directory does not exclude it.

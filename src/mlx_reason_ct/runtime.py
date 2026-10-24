@@ -11,6 +11,12 @@ from mlx_reason_ct.errors import MissingDependencyError
 
 
 def import_mlx() -> "Mlx":
+    """Return the MLX module after requiring macOS arm64 and a loadable Metal runtime.
+
+    Raises:
+        MissingDependencyError: the host is not Apple Silicon macOS, or MLX or
+            the Metal GPU cannot be loaded.
+    """
     if platform.system() != "Darwin" or platform.machine() != "arm64":
         raise MissingDependencyError(
             "NV-Reason-CT inference requires macOS on Apple Silicon with Metal",
@@ -31,6 +37,7 @@ def import_mlx() -> "Mlx":
 
 
 def host_info() -> dict[str, str]:
+    """Return host platform, macOS, Python and MLX versions recorded in ``run.json``."""
     return {
         "platform": platform.system(),
         "machine": platform.machine(),

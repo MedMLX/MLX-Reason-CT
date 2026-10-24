@@ -554,8 +554,8 @@ def test_native_attention_k8_preserves_reference_carries() -> None:
     carry[6] = -np.inf
     carry[7] = np.nan
     outputs: list[FloatArray] = []
-    # Projection retains the original bit-shift block as its production slow
-    # path. Compare that independent implementation with attention's local guard.
+    # Projection retains the original bit-shift block as its slow path in the
+    # package. Compare that independent implementation with attention's local guard.
     for owner in ("projection", "attention"):
         block = mx.fast.metal_kernel(
             name="test_k8_" + owner,

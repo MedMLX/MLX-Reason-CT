@@ -47,13 +47,28 @@ def run(
     ``anatomy_region`` (chest or abdomen) is requested. Pass ``anatomy_region=None``
     for the pinned processor's own centered crop, used upstream when the
     chest/abdomen heuristic is unreliable for a given scan. Generation is greedy.
-    ``precision`` selects float32 (default), source-matched bfloat16 arithmetic,
-    or bfloat16_fp32 (BF16 weights with FP32 accumulation and decoding).
+    ``precision`` selects float32 (default), bfloat16 (BF16 weights with the
+    pinned source's cast and cache boundaries; not yet qualified against the
+    original BF16 model), or bfloat16_fp32 (BF16 weights with FP32 accumulation
+    and decoding).
     ``history`` continues a conversation about the same CT: already-answered
     ``(question, answer)`` turns, oldest first; ``prompt`` is the new, still-
     unanswered turn. Empty or truncated responses raise ModelExecutionError
     after retaining partial output and failure metadata. All reports require
     human review.
+
+    Returns:
+        ``{"outputs": {"report", "response", "run"}, "details": ...}``: absolute
+        POSIX file paths and the ``run.json`` record.
+
+    Raises:
+        InvalidInputError: ``image_path`` is not an existing ``.nii``/``.nii.gz``
+            file, ``overwrite`` is not a bool, outputs exist without ``overwrite``,
+            or the options or CT are invalid.
+        AssetNotReadyError: ``weights_path`` is not a directory or the bundle is
+            missing or mismatched.
+        MissingDependencyError: an import fails or Metal is unavailable.
+        ModelExecutionError: generation failed, or the response was empty or truncated.
     """
     image = Path(image_path).expanduser().resolve()
     if not image.name.endswith((".nii", ".nii.gz")):

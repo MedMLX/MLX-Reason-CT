@@ -24,6 +24,7 @@ def bfloat16(values: FloatInput) -> Array:
 
 
 def layer_norm(rng: np.random.Generator) -> dict[str, JsonValue]:
+    """Record a float64 LayerNorm of BF16-rounded ``(1, 2, 864)`` inputs, as FP32 and BF16."""
     values = bfloat16(rng.normal(size=(1, 2, 864)).astype(np.float32))
     weight = bfloat16(rng.uniform(0.75, 1.25, 864).astype(np.float32))
     bias = bfloat16(rng.uniform(-0.1, 0.1, 864).astype(np.float32))
@@ -42,6 +43,7 @@ def layer_norm(rng: np.random.Generator) -> dict[str, JsonValue]:
 
 
 def activations(rng: np.random.Generator) -> dict[str, JsonValue]:
+    """Record float64 sigmoid and SiLU of 64 BF16-rounded inputs in [-8, 8]."""
     values = bfloat16(np.concatenate([[-8.0, 0.0, 8.0], rng.uniform(-8, 8, 61)]))
     fp = values.astype(np.float64)
     sigmoid = (1 / (1 + np.exp(-fp))).astype(np.float32)
@@ -55,6 +57,10 @@ def activations(rng: np.random.Generator) -> dict[str, JsonValue]:
 
 
 def mean_squares() -> dict[str, JsonValue]:
+    """Record the seed and float64 mean of squares per ``(width, rows)`` case.
+
+    Inputs are not stored; tests regenerate them from the recorded seed.
+    """
     cases: dict[str, JsonValue] = {}
     for width in (128, 256, 2560):
         for rows in (1, 2, 17):
@@ -67,6 +73,11 @@ def mean_squares() -> dict[str, JsonValue]:
 
 
 def projections(rng: np.random.Generator) -> dict[str, JsonValue]:
+    """Record a float64 ``(1, 2, 32)`` by ``(8, 32)`` projection with bias.
+
+    Stores results for raw and BF16-rounded activations plus the sum of absolute
+    products, which scales the allowed accumulation error.
+    """
     values = rng.normal(0, 0.3, (1, 2, 32)).astype(np.float32)
     weight = bfloat16(rng.normal(0, 0.3, (8, 32)).astype(np.float32))
     bias = bfloat16(rng.normal(0, 0.1, 8).astype(np.float32))
@@ -87,6 +98,12 @@ def projections(rng: np.random.Generator) -> dict[str, JsonValue]:
 
 
 def cache_normalization(rng: np.random.Generator) -> dict[str, JsonValue]:
+    """Record query/key L2 normalization of one 128-wide head, plus a recurrent sample.
+
+    The ``float32`` entries use float64 arithmetic; the ``bfloat16`` entries round
+    after the square, sum, epsilon add, inverse square root and multiply. Queries
+    are additionally scaled by ``128 ** -0.5``.
+    """
     references: dict[str, JsonValue] = {}
     for kind in ("query", "key"):
         values = bfloat16(rng.normal(0, 0.3, 128).astype(np.float32))
@@ -110,6 +127,7 @@ def cache_normalization(rng: np.random.Generator) -> dict[str, JsonValue]:
 
 
 def record() -> dict[str, JsonValue]:
+    """Build the full reference record; raises ``RuntimeError`` off macOS arm64."""
     if (platform.system(), platform.machine()) != ("Darwin", "arm64"):
         raise RuntimeError("Record test references on macOS arm64 only")
     rng = np.random.Generator(np.random.PCG64(431))
@@ -137,6 +155,7 @@ def record() -> dict[str, JsonValue]:
 
 
 def main() -> None:
+    """Write the reference JSON to ``--output``."""
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument(
         "--output", type=Path, default=Path("tests/fixtures/nv_reason_ct/arithmetic.json")

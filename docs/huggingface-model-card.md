@@ -135,6 +135,5 @@ Weights: [OpenMDW-1.1](https://huggingface.co/josand/MLX-Reason-CT/blob/main/LIC
 Copyright (c) 2026 NVIDIA CORPORATION & AFFILIATES.
 Underlying Qwen3.5 terms: [Apache-2.0](https://huggingface.co/josand/MLX-Reason-CT/blob/main/APACHE-2.0.txt).
 
-Port code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE),
-Copyright (c) 2026 Joseph Sandoval.
+Port code: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE).
 [Third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).

@@ -118,8 +118,8 @@ files and failure metadata, then raise; increase `max_new_tokens` for truncation
 JSON records carry `schema_version=1`. Reports require human review.
 
 Runner tests cover synthetic input, asset validation and report orchestration.
-The fixed production network has no tiny configurable variant; these tests do
-not establish learned report accuracy or clinical performance.
+The network has a fixed full size with no tiny configurable variant; these tests
+do not establish learned report accuracy or clinical performance.
 
 ## Weights
 

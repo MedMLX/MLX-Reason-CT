@@ -133,7 +133,23 @@ def generate(
     *,
     max_new_tokens: int,
 ) -> tuple[list[int], dict[str, object]]:
-    """Greedy generation with the pinned EOS set and request-owned hybrid cache."""
+    """Greedy generation with the pinned EOS set and request-owned hybrid cache.
+
+    Args:
+        model: loaded network.
+        inputs: tokenized prompt; its image placeholders start at ``image_start``.
+        embeddings: projected CT embeddings, shape ``(1, N, hidden)``, replacing
+            the ``N`` placeholder token embeddings.
+        max_new_tokens: generation limit, including the EOS token if produced.
+
+    Returns:
+        ``(token_ids, metrics)``. Generation stops at the first EOS id or at
+        ``max_new_tokens``; ``metrics`` records whether it ended at EOS or was
+        truncated, token counts, and decoder-cache sizes.
+
+    Raises:
+        ModelExecutionError: a logit tensor is not finite.
+    """
     mx = import_mlx()
     tokens = mx.array(inputs.input_ids)
     start = inputs.image_start
@@ -143,6 +159,8 @@ def generate(
         axis=1,
     )
     hidden, cache = model.decode(hidden, mx.array(inputs.position_ids))
+    # Only the last position is projected to logits; the prompt-length hidden states
+    # are dropped afterwards.
     logit = model.logits(hidden[:, -1:])
     mx.eval(logit, *cache.arrays())
     del hidden
@@ -156,6 +174,8 @@ def generate(
         output.append(token)
         if token in model.eos_ids or index + 1 == max_new_tokens:
             break
+        # Image tokens consume fewer MRoPE positions than sequence slots, so new text
+        # positions are the cache length shifted by rope_delta.
         position = mx.full((3, 1, 1), cache.offset + inputs.rope_delta, dtype=mx.int64)
         hidden, cache = model.decode(model.embed(mx.array([[token]])), position, cache)
         logit = model.logits(hidden)
@@ -163,6 +183,7 @@ def generate(
         if len(output) in {1, 8, 32, 128, 256, 512, 1024, 2048, 4096}:
             growth.append({"decoded_tokens": len(output), "cache_bytes": cache.nbytes})
     mx.synchronize()
+    # The last sampled token is never fed back, so the cache holds one fewer token.
     growth.append({"decoded_tokens": len(output) - 1, "cache_bytes": cache.nbytes})
     complete = bool(output) and output[-1] in model.eos_ids
     return output, {
@@ -199,6 +220,24 @@ def generate_report(
     ``(question, answer)`` turns, oldest first, with ``prompt``/the default
     report request as the new, still-unanswered turn. Existing report files
     require ``overwrite=True`` to replace.
+
+    ``source`` is a HU NIfTI CT and ``model_dir`` the converted bundle root.
+    ``precision`` is a public profile name (see ``PRECISION_PROFILES``) and
+    ``max_new_tokens`` must be an integer in 1-8192. Generation is greedy.
+
+    Returns:
+        The ``run.json`` record: status, generation metrics, CT geometry,
+        generated token ids and runtime details. The report and response are
+        written to ``output_dir`` next to it. The record always sets
+        ``requires_human_review`` and ``clinical_validation: false``.
+
+    Raises:
+        InvalidInputError: invalid options, unreadable CT, or existing outputs
+            without ``overwrite``.
+        AssetNotReadyError: the converted bundle is missing or mismatched.
+        MissingDependencyError: Metal or MLX is unavailable.
+        ModelExecutionError: non-finite activations, or an empty or truncated
+            response (partial files and a ``status: failed`` run record are kept).
     """
     prompt, resolved_history = _validate_generation_options(
         prompt, anatomy_region, enable_thinking, max_new_tokens, overwrite, precision, history
@@ -218,6 +257,7 @@ def generate_report(
     features, embeddings = model.vision(mx.array(pixels))
     if not bool(mx.all(mx.isfinite(embeddings)).item()):
         raise ModelExecutionError("NV-Reason-CT produced nonfinite image embeddings")
+    # Only the projected embeddings are needed for decoding.
     del features
     tokens, metrics = generate(model, inputs, embeddings, max_new_tokens=max_new_tokens)
     metrics.update(

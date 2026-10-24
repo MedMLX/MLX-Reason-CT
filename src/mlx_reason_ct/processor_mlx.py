@@ -20,6 +20,24 @@ from mlx_reason_ct.errors import InvalidPromptError
 
 @dataclass(frozen=True)
 class VolumePrompt:
+    """Tokenized single-CT request; ``T`` is the prompt length after image expansion.
+
+    The CT occupies one contiguous run of ``<|image_pad|>`` placeholders starting
+    at ``image_start``, one per visual token (``prod(grid)``, 13,824 for the
+    pinned 24 x 24 x 24 grid). Their embeddings are spliced in by the generator.
+
+    Attributes:
+        text: Rendered chat text with a single, unexpanded image marker.
+        input_ids: int64 token ids, shape ``(1, T)``.
+        position_ids: int64 3D MRoPE indices, shape ``(3, 1, T)``, rows ordered
+            as the visual grid axes (Z, Y, X of the cropped CT).
+        attention_mask: all-ones int64, shape ``(1, T)``.
+        mm_token_type_ids: int64, shape ``(1, T)``; 1 at image placeholders.
+        rope_delta: ``max(position_ids) + 1 - T``; added to the cache offset to
+            get the position of each newly generated token.
+        image_start: index of the first image placeholder.
+    """
+
     text: str
     input_ids: np.ndarray
     position_ids: np.ndarray
@@ -32,7 +50,26 @@ class VolumePrompt:
 def volume_positions(
     ids: np.ndarray, image_token_id: int, grid: tuple[int, int, int]
 ) -> tuple[np.ndarray, int, int]:
-    """Pinned unmerged 3D MRoPE indices for the public single-volume request."""
+    """Pinned unmerged 3D MRoPE indices for the public single-volume request.
+
+    Args:
+        ids: 1D token ids with the image marker already expanded.
+        image_token_id: id of the image placeholder token.
+        grid: visual token grid ``(Z, Y, X)`` of the cropped CT; placeholders are
+            laid out in row-major order over it (X fastest).
+
+    Returns:
+        ``(positions, rope_delta, start)``: int64 positions of shape
+        ``(3, 1, len(ids))``, the ``rope_delta`` (``max(positions) + 1 -
+        len(ids)``), and the index of the first placeholder. Text before
+        the image uses its token index on all three rows; image tokens use their
+        grid index plus ``start``; text after continues from ``start`` plus the
+        larger of the height and width extents.
+
+    Raises:
+        InvalidPromptError: the placeholders are not one contiguous run of
+            exactly ``prod(grid)`` tokens.
+    """
     indices = np.flatnonzero(ids == image_token_id)
     count = int(np.prod(grid))
     if len(indices) != count or not np.array_equal(
@@ -130,9 +167,22 @@ class Processor:
         )
 
     def image(self, source: Path, region: str | None) -> tuple[np.ndarray, CTCrop]:
+        """Load, resample and crop a NIfTI CT into the vision-encoder input.
+
+        Args:
+            source: HU NIfTI volume.
+            region: ``"chest"``, ``"abdomen"`` or ``None`` for a plain centered crop.
+
+        Returns:
+            ``(pixels, crop)``. ``pixels`` is float32 of shape ``(1, 1, Z, Y, X)``
+            (batch, channel, then the LPS-oriented crop axes reversed from the
+            ``(X, Y, Z)`` order of ``crop.values``). HU values are clipped to
+            [-1000, 1000] and divided by 1000, so the range is [-1, 1].
+        """
         crop = load_anatomy_ct(source, region, spacing=self.spacing, roi=self.shape)
         pixels = np.clip(crop.values, -1000.0, 1000.0) / np.float32(1000.0)
         return np.ascontiguousarray(pixels.transpose(2, 1, 0)[None, None]), crop
 
     def decode(self, tokens: list[int]) -> str:
+        """Decode generated token ids to text, dropping special tokens."""
         return self.tokenizer.decode(tokens, skip_special_tokens=True)
