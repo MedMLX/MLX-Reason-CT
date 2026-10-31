@@ -13,11 +13,10 @@ peak MLX memory is about 22.7 GB, plus preprocessing, macOS and other applicatio
 Allow disk space for both the download cache and local bundle.
 
 Run these commands in a new working directory. This walkthrough targets the
-published `mlx-reason-ct==0.3.2` package:
+current published `mlx-reason-ct` package:
 
 ```bash
-uv tool install --python 3.13 \
-  https://github.com/MedMLX/mlx-reason-ct/releases/download/v0.3.2/mlx_reason_ct-0.3.2-py3-none-any.whl
+uv tool install --python 3.13 mlx-reason-ct
 
 mlx-reason-ct download \
   --repo MedMLX/MLX-Reason-CT \
@@ -29,7 +28,7 @@ mlx-reason-ct verify --model-dir models
 
 If `uv` reports that its executable directory is missing from `PATH`, run
 `uv tool update-shell` and open a new terminal before invoking `mlx-reason-ct`.
-The public `medmlx-core==0.2.3` dependency installs from PyPI with the package.
+The public `medmlx-core==0.2.5` dependency installs from PyPI with the package.
 
 Verification prints JSON containing `"verified": true`, `"dtype": "float32"`,
 `"shards": 35` and source revision

@@ -2,7 +2,7 @@
 
 Generate reports and ask questions about 3D chest and abdomen CT, locally on Apple Silicon.
 
-[Docs](https://github.com/MedMLX/MLX-Reason-CT/blob/main/docs/technical.md) · [Model weights](https://huggingface.co/MedMLX/MLX-Reason-CT) · [MedMLX](https://github.com/MedMLX)
+[Docs](https://github.com/MedMLX/mlx-reason-ct/blob/main/docs/technical.md) · [Model weights](https://huggingface.co/MedMLX/MLX-Reason-CT) · [MedMLX](https://github.com/MedMLX)
 
 | Input | Output |
 | :--- | :--- |
@@ -40,6 +40,6 @@ weights report `null` unless the folder carries a MedMLX download revision.
 
 ## License
 
-Port contributions: [Apache-2.0](https://github.com/MedMLX/MLX-Reason-CT/blob/main/LICENSE). NVIDIA model materials and weights: OpenMDW-1.1. See [third-party notices](https://github.com/MedMLX/MLX-Reason-CT/blob/main/THIRD_PARTY_NOTICES.md).
+Port contributions: [Apache-2.0](https://github.com/MedMLX/mlx-reason-ct/blob/main/LICENSE). NVIDIA model materials and weights: OpenMDW-1.1. See [third-party notices](https://github.com/MedMLX/mlx-reason-ct/blob/main/THIRD_PARTY_NOTICES.md).
 
 For research and education. Outputs require human review.

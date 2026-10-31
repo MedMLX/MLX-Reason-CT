@@ -31,8 +31,8 @@ for Apple Silicon. Run 3D CT reasoning and report generation locally on Mac.
 - FP32 by default, with explicit BF16 arithmetic profiles on Metal
 
 MLX port by **Joseph Sandoval**.
-[GitHub releases](https://github.com/MedMLX/mlx-reason-ct/releases) ·
-[Usage](https://github.com/MedMLX/mlx-reason-ct/blob/v0.3.2/docs/usage.md) ·
+[PyPI](https://pypi.org/project/mlx-reason-ct/) ·
+[Usage](https://github.com/MedMLX/mlx-reason-ct/blob/main/docs/usage.md) ·
 [Paper](https://arxiv.org/abs/2609.27511) ·
 [Weights](https://huggingface.co/MedMLX/MLX-Reason-CT)
 
@@ -46,7 +46,7 @@ Supported platform: macOS arm64 on an Apple Silicon Mac with Metal GPU access,
 Python 3.13 or 3.14 and [uv](https://docs.astral.sh/uv/). Inference fails explicitly when
 Metal is unavailable.
 
-`v0.3.2` uses the public Apache-2.0 `medmlx-core==0.2.3` runtime from PyPI.
+The current release uses the public Apache-2.0 `medmlx-core==0.2.5` runtime from PyPI.
 
 Weights occupy 17.4 GB. Measured peak MLX memory use is about 22.7 GB;
 allow additional unified memory for preprocessing, macOS and other apps.
@@ -54,8 +54,7 @@ allow additional unified memory for preprocessing, macOS and other apps.
 ## Quick start
 
 ```bash
-uv tool install --python 3.13 \
-  https://github.com/MedMLX/mlx-reason-ct/releases/download/v0.3.2/mlx_reason_ct-0.3.2-py3-none-any.whl
+uv tool install --python 3.13 mlx-reason-ct
 
 mlx-reason-ct download \
   --repo MedMLX/MLX-Reason-CT \
@@ -81,16 +80,16 @@ mlx-reason-ct report \
 To ask a question about the CT, set `--prompt` to your question. Use
 `--anatomy-region none` for the processor's plain centered crop and `--history`
 for follow-up questions about the same CT; see the
-[usage guide](https://github.com/MedMLX/mlx-reason-ct/blob/v0.3.2/docs/usage.md).
+[usage guide](https://github.com/MedMLX/mlx-reason-ct/blob/main/docs/usage.md).
 
-For an existing Python 3.13 or 3.14 environment, use `pip install` with the same release-wheel URL.
-Wheel and source archives are also available in the
-[GitHub release](https://github.com/MedMLX/mlx-reason-ct/releases/tag/v0.3.2).
+For an existing Python 3.13 or 3.14 environment, use
+`pip install mlx-reason-ct`. Wheel and source archives are also
+available on [PyPI](https://pypi.org/project/mlx-reason-ct/).
 For source development, clone [the repository](https://github.com/MedMLX/mlx-reason-ct)
 and run `make env`; use `uv run mlx-reason-ct` for the commands above.
 
 For a generated input with no patient data, follow the
-[synthetic CT walkthrough](https://github.com/MedMLX/mlx-reason-ct/blob/v0.3.2/docs/synthetic-walkthrough.md).
+[synthetic CT walkthrough](https://github.com/MedMLX/mlx-reason-ct/blob/main/docs/synthetic-walkthrough.md).
 It covers installation, bundle verification, input generation and completion checks.
 
 ## Input and output
@@ -115,11 +114,11 @@ report in both text and JSON, while preserving reasoning and nonempty answer ele
 
 Inference defaults to FP32 with weights converted directly from the
 original BF16 checkpoint, without retraining.
-[Implementation and verification details](https://github.com/MedMLX/mlx-reason-ct/blob/v0.3.2/docs/technical.md),
+[Implementation and verification details](https://github.com/MedMLX/mlx-reason-ct/blob/main/docs/technical.md),
 and the limits of its darwin-arm64 component references are in the companion repository.
 [Upstream model card and limitations](https://huggingface.co/nvidia/NV-Reason-CT).
 
-The `v0.3.2` release passed 144 synthetic-fixture tests and completed a default
+The v0.3.2 release passed 144 synthetic-fixture tests and completed a default
 FP32 report from a freshly installed wheel on a synthetic CT (180 generated tokens,
 EOS reached, text and JSON outputs consistent). This verifies execution and the
 documented component contracts; it does not establish clinical accuracy or
